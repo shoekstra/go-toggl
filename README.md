@@ -2,6 +2,39 @@
 
 A modern Go client library for the Toggl Track API v9.
 
+## Installation
+
+```bash
+go get github.com/shoekstra/go-toggl
+```
+
+## Usage
+
+```go
+package main
+
+import (
+  "context"
+  "log"
+
+  "github.com/shoekstra/go-toggl"
+)
+
+func main() {
+  client, err := toggl.NewClient("your-api-token")
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  // Use the client
+  // te, resp, err := client.GetTimeEntry(context.Background(), 12345)
+}
+```
+
+## Services
+
+- **TimeEntries** - Time entry management
+
 ## Development
 
 ### Prerequisites

@@ -1,10 +1,647 @@
 package toggl
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 )
 
-func TestTimeEntriesService(t *testing.T) {
-	// TODO: Implement test
-	t.Skip("Not implemented")
+// testClient creates a test client backed by an httptest.Server running handler.
+// The server is closed automatically when the test finishes.
+func testClient(t *testing.T, handler http.Handler) *Client {
+	t.Helper()
+	server := httptest.NewServer(handler)
+	t.Cleanup(server.Close)
+	client, err := NewClient("test-token", WithBaseURL(server.URL))
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	return client
+}
+
+const timeEntryJSON = `{
+	"id": 123,
+	"description": "Meeting",
+	"project_id": 456,
+	"task_id": null,
+	"client_id": null,
+	"workspace_id": 1,
+	"user_id": 99,
+	"billable": false,
+	"tag_ids": [1, 2],
+	"tags": ["client", "meeting"],
+	"start": "2024-01-15T09:00:00Z",
+	"stop": "2024-01-15T10:00:00Z",
+	"duration": 3600,
+	"created_with": "go-toggl",
+	"at": "2024-01-15T10:00:00Z"
+}`
+
+func TestTimeEntriesService_ListTimeEntries(t *testing.T) {
+	tests := []struct {
+		name       string
+		opts       *ListTimeEntriesOptions
+		statusCode int
+		response   string
+		wantCount  int
+		wantErr    bool
+	}{
+		{
+			name:       "success",
+			opts:       nil,
+			statusCode: http.StatusOK,
+			response:   "[" + timeEntryJSON + "]",
+			wantCount:  1,
+			wantErr:    false,
+		},
+		{
+			name: "success with options",
+			opts: &ListTimeEntriesOptions{
+				StartDate: String("2024-01-01"),
+				EndDate:   String("2024-01-31"),
+			},
+			statusCode: http.StatusOK,
+			response:   "[" + timeEntryJSON + "," + timeEntryJSON + "]",
+			wantCount:  2,
+			wantErr:    false,
+		},
+		{
+			name:       "empty result",
+			opts:       nil,
+			statusCode: http.StatusOK,
+			response:   "[]",
+			wantCount:  0,
+			wantErr:    false,
+		},
+		{
+			name:       "unauthorized",
+			opts:       nil,
+			statusCode: http.StatusUnauthorized,
+			response:   `{"error": "unauthorized"}`,
+			wantCount:  0,
+			wantErr:    true,
+		},
+		{
+			name:       "server error",
+			opts:       nil,
+			statusCode: http.StatusInternalServerError,
+			response:   `{"error": "internal server error"}`,
+			wantCount:  0,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodGet {
+					t.Errorf("expected GET, got %s", r.Method)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				w.Write([]byte(tt.response))
+			})
+
+			client := testClient(t, handler)
+			entries, _, err := client.TimeEntries.ListTimeEntries(context.Background(), tt.opts)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ListTimeEntries() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && len(entries) != tt.wantCount {
+				t.Errorf("ListTimeEntries() count = %d, want %d", len(entries), tt.wantCount)
+			}
+		})
+	}
+}
+
+func TestTimeEntriesService_ListTimeEntries_QueryParams(t *testing.T) {
+	var gotQuery string
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("[]"))
+	})
+
+	client := testClient(t, handler)
+	_, _, err := client.TimeEntries.ListTimeEntries(context.Background(), &ListTimeEntriesOptions{
+		StartDate: String("2024-01-01"),
+		EndDate:   String("2024-01-31"),
+	})
+	if err != nil {
+		t.Fatalf("ListTimeEntries() error = %v", err)
+	}
+	if gotQuery == "" {
+		t.Error("expected query parameters, got none")
+	}
+}
+
+func TestTimeEntriesService_GetTimeEntry(t *testing.T) {
+	tests := []struct {
+		name       string
+		entryID    int
+		statusCode int
+		response   string
+		wantID     int
+		wantErr    bool
+	}{
+		{
+			name:       "success",
+			entryID:    123,
+			statusCode: http.StatusOK,
+			response:   timeEntryJSON,
+			wantID:     123,
+			wantErr:    false,
+		},
+		{
+			name:       "not found",
+			entryID:    999,
+			statusCode: http.StatusNotFound,
+			response:   `{"error": "not found"}`,
+			wantID:     0,
+			wantErr:    true,
+		},
+		{
+			name:       "unauthorized",
+			entryID:    123,
+			statusCode: http.StatusUnauthorized,
+			response:   `{"error": "unauthorized"}`,
+			wantID:     0,
+			wantErr:    true,
+		},
+		{
+			name:       "server error",
+			entryID:    123,
+			statusCode: http.StatusInternalServerError,
+			response:   `{"error": "internal server error"}`,
+			wantID:     0,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodGet {
+					t.Errorf("expected GET, got %s", r.Method)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				w.Write([]byte(tt.response))
+			})
+
+			client := testClient(t, handler)
+			entry, _, err := client.TimeEntries.GetTimeEntry(context.Background(), tt.entryID)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("GetTimeEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && entry.ID != tt.wantID {
+				t.Errorf("GetTimeEntry() ID = %d, want %d", entry.ID, tt.wantID)
+			}
+		})
+	}
+}
+
+func TestTimeEntriesService_GetRunningTimeEntry(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+		response   string
+		wantID     int
+		wantErr    bool
+	}{
+		{
+			name:       "success",
+			statusCode: http.StatusOK,
+			response:   timeEntryJSON,
+			wantID:     123,
+			wantErr:    false,
+		},
+		{
+			name:       "no running entry",
+			statusCode: http.StatusNotFound,
+			response:   `{"error": "not found"}`,
+			wantID:     0,
+			wantErr:    true,
+		},
+		{
+			name:       "unauthorized",
+			statusCode: http.StatusUnauthorized,
+			response:   `{"error": "unauthorized"}`,
+			wantID:     0,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodGet {
+					t.Errorf("expected GET, got %s", r.Method)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				w.Write([]byte(tt.response))
+			})
+
+			client := testClient(t, handler)
+			entry, _, err := client.TimeEntries.GetRunningTimeEntry(context.Background())
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("GetRunningTimeEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && entry.ID != tt.wantID {
+				t.Errorf("GetRunningTimeEntry() ID = %d, want %d", entry.ID, tt.wantID)
+			}
+		})
+	}
+}
+
+func TestTimeEntriesService_CreateTimeEntry(t *testing.T) {
+	start := time.Date(2024, 1, 15, 9, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name        string
+		workspaceID int
+		opts        *CreateTimeEntryOptions
+		statusCode  int
+		response    string
+		wantID      int
+		wantErr     bool
+	}{
+		{
+			name:        "success",
+			workspaceID: 1,
+			opts: &CreateTimeEntryOptions{
+				Start:       start,
+				Description: String("Meeting"),
+				ProjectID:   Int(456),
+			},
+			statusCode: http.StatusOK,
+			response:   timeEntryJSON,
+			wantID:     123,
+			wantErr:    false,
+		},
+		{
+			name:        "success with all options",
+			workspaceID: 1,
+			opts: &CreateTimeEntryOptions{
+				Start:       start,
+				Description: String("Deep work"),
+				ProjectID:   Int(456),
+				TaskID:      Int(789),
+				Billable:    Bool(true),
+				Tags:        []string{"focus"},
+				TagIDs:      []int{1, 2},
+				Duration:    Int(7200),
+				CreatedWith: "my-app",
+			},
+			statusCode: http.StatusOK,
+			response:   timeEntryJSON,
+			wantID:     123,
+			wantErr:    false,
+		},
+		{
+			name:        "nil options",
+			workspaceID: 1,
+			opts:        nil,
+			statusCode:  0,
+			response:    "",
+			wantID:      0,
+			wantErr:     true,
+		},
+		{
+			name:        "unauthorized",
+			workspaceID: 1,
+			opts:        &CreateTimeEntryOptions{Start: start},
+			statusCode:  http.StatusUnauthorized,
+			response:    `{"error": "unauthorized"}`,
+			wantID:      0,
+			wantErr:     true,
+		},
+		{
+			name:        "server error",
+			workspaceID: 1,
+			opts:        &CreateTimeEntryOptions{Start: start},
+			statusCode:  http.StatusInternalServerError,
+			response:    `{"error": "internal server error"}`,
+			wantID:      0,
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPost {
+					t.Errorf("expected POST, got %s", r.Method)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				w.Write([]byte(tt.response))
+			})
+
+			client := testClient(t, handler)
+			entry, _, err := client.TimeEntries.CreateTimeEntry(context.Background(), tt.workspaceID, tt.opts)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("CreateTimeEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && entry.ID != tt.wantID {
+				t.Errorf("CreateTimeEntry() ID = %d, want %d", entry.ID, tt.wantID)
+			}
+		})
+	}
+}
+
+func TestTimeEntriesService_StartTimeEntry(t *testing.T) {
+	start := time.Date(2024, 1, 15, 9, 0, 0, 0, time.UTC)
+
+	t.Run("success", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				t.Errorf("expected POST, got %s", r.Method)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(timeEntryJSON))
+		})
+
+		client := testClient(t, handler)
+		entry, _, err := client.TimeEntries.StartTimeEntry(context.Background(), 1, &CreateTimeEntryOptions{
+			Start:       start,
+			Description: String("Focus session"),
+		})
+		if err != nil {
+			t.Fatalf("StartTimeEntry() error = %v", err)
+		}
+		if entry.ID != 123 {
+			t.Errorf("StartTimeEntry() ID = %d, want 123", entry.ID)
+		}
+	})
+
+	t.Run("nil options", func(t *testing.T) {
+		client := testClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		_, _, err := client.TimeEntries.StartTimeEntry(context.Background(), 1, nil)
+		if err == nil {
+			t.Error("StartTimeEntry() expected error for nil options, got nil")
+		}
+	})
+
+	t.Run("does not mutate caller opts", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(timeEntryJSON))
+		})
+
+		client := testClient(t, handler)
+		stop := start.Add(time.Hour)
+		opts := &CreateTimeEntryOptions{
+			Start:    start,
+			Stop:     &stop,
+			Duration: Int(3600),
+		}
+		_, _, _ = client.TimeEntries.StartTimeEntry(context.Background(), 1, opts)
+
+		// Caller's opts must not be modified.
+		if opts.Duration == nil || *opts.Duration != 3600 {
+			t.Error("StartTimeEntry() mutated caller's Duration")
+		}
+		if opts.Stop == nil {
+			t.Error("StartTimeEntry() mutated caller's Stop")
+		}
+	})
+}
+
+func TestTimeEntriesService_UpdateTimeEntry(t *testing.T) {
+	tests := []struct {
+		name        string
+		workspaceID int
+		entryID     int
+		opts        *UpdateTimeEntryOptions
+		statusCode  int
+		response    string
+		wantID      int
+		wantErr     bool
+	}{
+		{
+			name:        "success",
+			workspaceID: 1,
+			entryID:     123,
+			opts: &UpdateTimeEntryOptions{
+				Description: String("Updated meeting"),
+				Billable:    Bool(true),
+			},
+			statusCode: http.StatusOK,
+			response:   timeEntryJSON,
+			wantID:     123,
+			wantErr:    false,
+		},
+		{
+			name:        "success with all options",
+			workspaceID: 1,
+			entryID:     123,
+			opts: &UpdateTimeEntryOptions{
+				Description: String("Updated"),
+				ProjectID:   Int(789),
+				TaskID:      Int(1),
+				Billable:    Bool(false),
+				Tags:        []string{"updated"},
+				TagIDs:      []int{3},
+				TagAction:   String("add"),
+				Duration:    Int(7200),
+			},
+			statusCode: http.StatusOK,
+			response:   timeEntryJSON,
+			wantID:     123,
+			wantErr:    false,
+		},
+		{
+			name:        "nil options",
+			workspaceID: 1,
+			entryID:     123,
+			opts:        nil,
+			wantErr:     true,
+		},
+		{
+			name:        "not found",
+			workspaceID: 1,
+			entryID:     999,
+			opts:        &UpdateTimeEntryOptions{Description: String("x")},
+			statusCode:  http.StatusNotFound,
+			response:    `{"error": "not found"}`,
+			wantErr:     true,
+		},
+		{
+			name:        "unauthorized",
+			workspaceID: 1,
+			entryID:     123,
+			opts:        &UpdateTimeEntryOptions{Description: String("x")},
+			statusCode:  http.StatusUnauthorized,
+			response:    `{"error": "unauthorized"}`,
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPut {
+					t.Errorf("expected PUT, got %s", r.Method)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				w.Write([]byte(tt.response))
+			})
+
+			client := testClient(t, handler)
+			entry, _, err := client.TimeEntries.UpdateTimeEntry(context.Background(), tt.workspaceID, tt.entryID, tt.opts)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("UpdateTimeEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && entry.ID != tt.wantID {
+				t.Errorf("UpdateTimeEntry() ID = %d, want %d", entry.ID, tt.wantID)
+			}
+		})
+	}
+}
+
+func TestTimeEntriesService_DeleteTimeEntry(t *testing.T) {
+	tests := []struct {
+		name        string
+		workspaceID int
+		entryID     int
+		statusCode  int
+		response    string
+		wantErr     bool
+	}{
+		{
+			name:        "success",
+			workspaceID: 1,
+			entryID:     123,
+			statusCode:  http.StatusOK,
+			response:    `"OK"`,
+			wantErr:     false,
+		},
+		{
+			name:        "not found",
+			workspaceID: 1,
+			entryID:     999,
+			statusCode:  http.StatusNotFound,
+			response:    `{"error": "not found"}`,
+			wantErr:     true,
+		},
+		{
+			name:        "unauthorized",
+			workspaceID: 1,
+			entryID:     123,
+			statusCode:  http.StatusUnauthorized,
+			response:    `{"error": "unauthorized"}`,
+			wantErr:     true,
+		},
+		{
+			name:        "server error",
+			workspaceID: 1,
+			entryID:     123,
+			statusCode:  http.StatusInternalServerError,
+			response:    `{"error": "internal server error"}`,
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodDelete {
+					t.Errorf("expected DELETE, got %s", r.Method)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				w.Write([]byte(tt.response))
+			})
+
+			client := testClient(t, handler)
+			_, err := client.TimeEntries.DeleteTimeEntry(context.Background(), tt.workspaceID, tt.entryID)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("DeleteTimeEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestTimeEntriesService_StopTimeEntry(t *testing.T) {
+	tests := []struct {
+		name        string
+		workspaceID int
+		entryID     int
+		statusCode  int
+		response    string
+		wantID      int
+		wantErr     bool
+	}{
+		{
+			name:        "success",
+			workspaceID: 1,
+			entryID:     123,
+			statusCode:  http.StatusOK,
+			response:    timeEntryJSON,
+			wantID:      123,
+			wantErr:     false,
+		},
+		{
+			name:        "not found",
+			workspaceID: 1,
+			entryID:     999,
+			statusCode:  http.StatusNotFound,
+			response:    `{"error": "not found"}`,
+			wantErr:     true,
+		},
+		{
+			name:        "unauthorized",
+			workspaceID: 1,
+			entryID:     123,
+			statusCode:  http.StatusUnauthorized,
+			response:    `{"error": "unauthorized"}`,
+			wantErr:     true,
+		},
+		{
+			name:        "server error",
+			workspaceID: 1,
+			entryID:     123,
+			statusCode:  http.StatusInternalServerError,
+			response:    `{"error": "internal server error"}`,
+			wantErr:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodPatch {
+					t.Errorf("expected PATCH, got %s", r.Method)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				w.Write([]byte(tt.response))
+			})
+
+			client := testClient(t, handler)
+			entry, _, err := client.TimeEntries.StopTimeEntry(context.Background(), tt.workspaceID, tt.entryID)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("StopTimeEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && entry.ID != tt.wantID {
+				t.Errorf("StopTimeEntry() ID = %d, want %d", entry.ID, tt.wantID)
+			}
+		})
+	}
 }
