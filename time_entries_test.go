@@ -2,6 +2,9 @@ package toggl
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -39,7 +42,23 @@ const timeEntryJSON = `{
 	"at": "2024-01-15T10:00:00Z"
 }`
 
+// assertBody reads and unmarshals the request body into a map, calling t.Fatal on failure.
+func assertBody(t *testing.T, r *http.Request) map[string]interface{} {
+	t.Helper()
+	raw, err := io.ReadAll(r.Body)
+	if err != nil {
+		t.Fatalf("read request body: %v", err)
+	}
+	var body map[string]interface{}
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatalf("unmarshal request body: %v", err)
+	}
+	return body
+}
+
 func TestTimeEntriesService_ListTimeEntries(t *testing.T) {
+	wantPath := "/api/v9/me/time_entries"
+
 	tests := []struct {
 		name       string
 		opts       *ListTimeEntriesOptions
@@ -98,6 +117,13 @@ func TestTimeEntriesService_ListTimeEntries(t *testing.T) {
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodGet {
 					t.Errorf("expected GET, got %s", r.Method)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if r.URL.Path != wantPath {
+					t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.statusCode)
@@ -118,10 +144,14 @@ func TestTimeEntriesService_ListTimeEntries(t *testing.T) {
 }
 
 func TestTimeEntriesService_ListTimeEntries_QueryParams(t *testing.T) {
-	var gotQuery string
-
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotQuery = r.URL.RawQuery
+		q := r.URL.Query()
+		if got := q.Get("start_date"); got != "2024-01-01" {
+			t.Errorf("start_date = %q, want %q", got, "2024-01-01")
+		}
+		if got := q.Get("end_date"); got != "2024-01-31" {
+			t.Errorf("end_date = %q, want %q", got, "2024-01-31")
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("[]"))
@@ -134,9 +164,6 @@ func TestTimeEntriesService_ListTimeEntries_QueryParams(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("ListTimeEntries() error = %v", err)
-	}
-	if gotQuery == "" {
-		t.Error("expected query parameters, got none")
 	}
 }
 
@@ -185,9 +212,17 @@ func TestTimeEntriesService_GetTimeEntry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			wantPath := fmt.Sprintf("/api/v9/me/time_entries/%d", tt.entryID)
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodGet {
 					t.Errorf("expected GET, got %s", r.Method)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if r.URL.Path != wantPath {
+					t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.statusCode)
@@ -208,6 +243,8 @@ func TestTimeEntriesService_GetTimeEntry(t *testing.T) {
 }
 
 func TestTimeEntriesService_GetRunningTimeEntry(t *testing.T) {
+	wantPath := "/api/v9/me/time_entries/current"
+
 	tests := []struct {
 		name       string
 		statusCode int
@@ -243,6 +280,13 @@ func TestTimeEntriesService_GetRunningTimeEntry(t *testing.T) {
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodGet {
 					t.Errorf("expected GET, got %s", r.Method)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if r.URL.Path != wantPath {
+					t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.statusCode)
@@ -337,9 +381,28 @@ func TestTimeEntriesService_CreateTimeEntry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			wantPath := fmt.Sprintf("/api/v9/workspaces/%d/time_entries", tt.workspaceID)
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodPost {
 					t.Errorf("expected POST, got %s", r.Method)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if r.URL.Path != wantPath {
+					t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				body := assertBody(t, r)
+				if wid, ok := body["workspace_id"].(float64); !ok || int(wid) != tt.workspaceID {
+					t.Errorf("workspace_id = %v, want %d", body["workspace_id"], tt.workspaceID)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if _, ok := body["duration"]; !ok {
+					t.Errorf("body missing required field duration")
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.statusCode)
@@ -361,11 +424,30 @@ func TestTimeEntriesService_CreateTimeEntry(t *testing.T) {
 
 func TestTimeEntriesService_StartTimeEntry(t *testing.T) {
 	start := time.Date(2024, 1, 15, 9, 0, 0, 0, time.UTC)
+	wantPath := "/api/v9/workspaces/1/time_entries"
 
 	t.Run("success", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			if r.URL.Path != wantPath {
+				t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			body := assertBody(t, r)
+			if dur, ok := body["duration"].(float64); !ok || int(dur) != -1 {
+				t.Errorf("duration = %v, want -1", body["duration"])
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			if _, hasStop := body["stop"]; hasStop {
+				t.Errorf("stop field must not be set for a running entry")
+				w.WriteHeader(http.StatusBadRequest)
+				return
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
@@ -491,9 +573,23 @@ func TestTimeEntriesService_UpdateTimeEntry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			wantPath := fmt.Sprintf("/api/v9/workspaces/%d/time_entries/%d", tt.workspaceID, tt.entryID)
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodPut {
 					t.Errorf("expected PUT, got %s", r.Method)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if r.URL.Path != wantPath {
+					t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				body := assertBody(t, r)
+				if wid, ok := body["workspace_id"].(float64); !ok || int(wid) != tt.workspaceID {
+					t.Errorf("workspace_id = %v, want %d", body["workspace_id"], tt.workspaceID)
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.statusCode)
@@ -558,9 +654,17 @@ func TestTimeEntriesService_DeleteTimeEntry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			wantPath := fmt.Sprintf("/api/v9/workspaces/%d/time_entries/%d", tt.workspaceID, tt.entryID)
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodDelete {
 					t.Errorf("expected DELETE, got %s", r.Method)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if r.URL.Path != wantPath {
+					t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.statusCode)
@@ -618,15 +722,23 @@ func TestTimeEntriesService_StopTimeEntry(t *testing.T) {
 			entryID:     123,
 			statusCode:  http.StatusInternalServerError,
 			response:    `{"error": "internal server error"}`,
-			wantErr:      true,
+			wantErr:     true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			wantPath := fmt.Sprintf("/api/v9/workspaces/%d/time_entries/%d/stop", tt.workspaceID, tt.entryID)
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodPatch {
 					t.Errorf("expected PATCH, got %s", r.Method)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if r.URL.Path != wantPath {
+					t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+					w.WriteHeader(http.StatusBadRequest)
+					return
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.statusCode)
