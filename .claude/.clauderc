@@ -1,0 +1,63 @@
+# Claude Code Configuration for go-toggl
+# This file helps Claude understand the project context
+
+## Quick Reference
+
+This is the go-toggl project - a service-oriented Go client for Toggl Track API v9.
+
+### Context Files (Read These First)
+
+- **ARCHITECTURE.md** - Service design and how to structure code
+- **CONVENTIONS.md** - Code style, commit messages, branch names
+- **IMPLEMENTATION_PATTERNS.md** - Templates for methods, tests, types
+- **V8_REFERENCE.md** - Patterns from v8 SDK to maintain
+
+### API Specification
+
+- **swagger-toggl-api.json** - Toggl Track API v9 OpenAPI spec
+- **swagger-reports.json** - Reports v1 OpenAPI spec
+- **swagger-webhooks.json** - Webhooks v1 OpenAPI spec
+
+### Key Commands
+
+```
+task test              # Run tests with coverage
+task lint              # Run linters
+task fmt               # Format code
+task all               # Run fmt, vet, lint, test
+task coverage          # Show coverage percentage
+```
+
+### Development Workflow
+
+1. Read context files (this .clauderc references them)
+2. Check CONVENTIONS.md for commit message format
+3. Use IMPLEMENTATION_PATTERNS.md as code templates
+4. Reference ARCHITECTURE.md for service design
+5. Check V8_REFERENCE.md if unsure about patterns
+
+### Important Rules
+
+- All methods need context.Context as first parameter
+- Use conventional commits: feat(Service): description
+- Write table-driven unit tests with mocked HTTP
+- Min 80% test coverage
+- All exported items need godoc comments
+- Run `task all` before committing
+
+### Services to Implement
+
+1. TimeEntriesService - Time entries CRUD
+2. ProjectsService - Projects CRUD
+3. TagsService - Tags CRUD
+4. ClientsService - Clients CRUD
+5. WorkspacesService - Workspace read-only
+6. ReportsService - Reports read-only
+
+### Getting Help
+
+If you're unsure:
+- Check ARCHITECTURE.md for design patterns
+- Check IMPLEMENTATION_PATTERNS.md for code templates
+- Check CONVENTIONS.md for style rules
+- Check V8_REFERENCE.md for API patterns
