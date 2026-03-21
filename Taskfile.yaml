@@ -1,0 +1,65 @@
+version: "3"
+
+tasks:
+  test:
+    desc: Run all tests with race detector
+    cmds:
+      - go test -v -race -coverprofile=coverage.out ./...
+
+  test:coverage:
+    desc: Run tests and display coverage
+    cmds:
+      - go test -race -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+
+  coverage:
+    desc: Show test coverage percentage
+    cmds:
+      - go test -race -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out | tail -1
+
+  lint:
+    desc: Run linters
+    cmds:
+      - golangci-lint run ./...
+
+  fmt:
+    desc: Format code and run goimports
+    cmds:
+      - go fmt ./...
+      - goimports -w .
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  build:examples:
+    desc: Build examples
+    cmds:
+      - go build -o bin/examples ./examples/...
+
+  clean:
+    desc: Clean up build artifacts and coverage files
+    cmds:
+      - rm -f coverage.out coverage.html
+      - rm -rf bin/
+
+  deps:
+    desc: Download and verify dependencies
+    cmds:
+      - go mod download
+      - go mod verify
+
+  tidy:
+    desc: Tidy go.mod and go.sum
+    cmds:
+      - go mod tidy
+
+  all:
+    desc: Run fmt, vet, lint, and test
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: lint
+      - task: test
