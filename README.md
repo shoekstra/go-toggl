@@ -2,6 +2,8 @@
 
 A modern Go client library for the Toggl Track API v9.
 
+[![codecov](https://codecov.io/github/shoekstra/go-toggl/graph/badge.svg?token=K6DEQB183Y)](https://codecov.io/github/shoekstra/go-toggl)
+
 ## Installation
 
 ```bash
