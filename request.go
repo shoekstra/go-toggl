@@ -109,6 +109,15 @@ func (c *Client) put(ctx context.Context, path string, body, v interface{}) (*Re
 	return c.do(ctx, req, v)
 }
 
+// patch performs a PATCH request.
+func (c *Client) patch(ctx context.Context, path string, body, v interface{}) (*Response, error) {
+	req, err := c.newRequest(ctx, http.MethodPatch, path, body)
+	if err != nil {
+		return nil, err
+	}
+	return c.do(ctx, req, v)
+}
+
 // delete performs a DELETE request.
 func (c *Client) delete(ctx context.Context, path string) (*Response, error) {
 	req, err := c.newRequest(ctx, http.MethodDelete, path, nil)

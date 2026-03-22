@@ -51,19 +51,20 @@ type TogglClient struct {
 // TimeEntry represents a time entry in Toggl.
 type TimeEntry struct {
 	ID          int        `json:"id"`
-	Name        *string    `json:"name"`
 	Description *string    `json:"description"`
-	Project     *int       `json:"project_id"`
-	Client      *int       `json:"client_id"`
+	ProjectID   *int       `json:"project_id"`
+	TaskID      *int       `json:"task_id"`
+	ClientID    *int       `json:"client_id"`
+	WorkspaceID int        `json:"workspace_id"`
+	UserID      int        `json:"user_id"`
+	Billable    bool       `json:"billable"`
+	TagIDs      []int      `json:"tag_ids"`
 	Tags        []string   `json:"tags"`
-	Billable    *bool      `json:"billable"`
 	Start       time.Time  `json:"start"`
 	Stop        *time.Time `json:"stop"`
 	Duration    int        `json:"duration"`
-	Workspace   int        `json:"workspace_id"`
-	User        int        `json:"user_id"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	CreatedWith string     `json:"created_with"`
+	At          time.Time  `json:"at"`
 }
 
 // Helper functions for pointer creation
