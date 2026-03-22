@@ -39,6 +39,7 @@ func main() {
 ## Services
 
 - **TimeEntries** - Time entry management
+- **Projects** - Project management
 - **Workspaces** - Workspace information
 
 ## Development
