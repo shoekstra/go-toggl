@@ -1,6 +1,9 @@
 package toggl
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Common types
 
@@ -60,10 +63,37 @@ type Project struct {
 
 // Tag represents a Toggl tag.
 type Tag struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	Workspace int       `json:"workspace_id"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID                  int        `json:"id"`
+	Name                string     `json:"name"`
+	// WorkspaceID is the workspace this tag belongs to (json: "workspace_id").
+	WorkspaceID         int        `json:"workspace_id"`
+	// Workspace is an alias for WorkspaceID retained for backwards compatibility.
+	Workspace           int        `json:"-"`
+	CreatorID           int        `json:"creator_id"`
+	At                  time.Time  `json:"at"`
+	DeletedAt           *time.Time `json:"deleted_at"`
+	IntegrationExtID    *string    `json:"integration_ext_id"`
+	IntegrationExtType  *string    `json:"integration_ext_type"`
+	Permissions         []string   `json:"permissions"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler for Tag, accepting both
+// "workspace_id" (current API) and "workspace" (legacy) and keeping
+// both WorkspaceID and Workspace in sync.
+func (t *Tag) UnmarshalJSON(data []byte) error {
+	type tagAlias Tag
+	aux := struct {
+		*tagAlias
+		WorkspaceAlt int `json:"workspace"`
+	}{tagAlias: (*tagAlias)(t)}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if t.WorkspaceID == 0 && aux.WorkspaceAlt != 0 {
+		t.WorkspaceID = aux.WorkspaceAlt
+	}
+	t.Workspace = t.WorkspaceID
+	return nil
 }
 
 // TogglClient represents a Toggl client (customer/organization).
