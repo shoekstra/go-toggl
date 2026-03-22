@@ -68,10 +68,15 @@ type Tag struct {
 
 // TogglClient represents a Toggl client (customer/organization).
 type TogglClient struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	Workspace int       `json:"workspace_id"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID                int       `json:"id"`
+	Name              string    `json:"name"`
+	WorkspaceID       int       `json:"wid"`
+	Notes             *string   `json:"notes"`
+	Archived          bool      `json:"archived"`
+	At                time.Time `json:"at"`
+	CreatorID         int       `json:"creator_id"`
+	ExternalReference *string   `json:"external_reference"`
+	Permissions       []string  `json:"permissions"`
 }
 
 // TimeEntry represents a time entry in Toggl.
