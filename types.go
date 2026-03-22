@@ -6,12 +6,29 @@ import "time"
 
 // Workspace represents a Toggl workspace.
 type Workspace struct {
-	ID            int        `json:"id"`
-	Name          string     `json:"name"`
-	Premium       bool       `json:"premium"`
-	Admin         bool       `json:"admin"`
-	SuspendDate   *time.Time `json:"suspend_date"`
-	SuspendReason *string    `json:"suspend_reason"`
+	ID                          int       `json:"id"`
+	Name                        string    `json:"name"`
+	OrganizationID              int       `json:"organization_id"`
+	ActiveProjectCount          int       `json:"active_project_count"`
+	At                          time.Time `json:"at"`
+	Premium                     bool      `json:"premium"`
+	BusinessWs                  bool      `json:"business_ws"`
+	DefaultCurrency             string    `json:"default_currency"`
+	DefaultHourlyRate           *float64  `json:"default_hourly_rate"`
+	OnlyAdminsMayCreateProjects bool      `json:"only_admins_may_create_projects"`
+	OnlyAdminsMayCreateTags     bool      `json:"only_admins_may_create_tags"`
+	OnlyAdminsSeeDashboard      bool      `json:"only_admins_see_team_dashboard"`
+	ProjectsBillableByDefault   bool      `json:"projects_billable_by_default"`
+	ProjectsEnforceBillable     bool      `json:"projects_enforce_billable"`
+	ProjectsPrivateByDefault    bool      `json:"projects_private_by_default"`
+	ReportsCollapse             bool      `json:"reports_collapse"`
+	Rounding                    int       `json:"rounding"`
+	RoundingMinutes             int       `json:"rounding_minutes"`
+	LogoURL                     *string   `json:"logo_url"`
+	IcalEnabled                 bool      `json:"ical_enabled"`
+	IcalURL                     *string   `json:"ical_url"`
+	Role                        string    `json:"role"`
+	Permissions                 []string  `json:"permissions"`
 }
 
 // Project represents a Toggl project.
