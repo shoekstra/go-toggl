@@ -33,20 +33,29 @@ type Workspace struct {
 
 // Project represents a Toggl project.
 type Project struct {
-	ID             int       `json:"id"`
-	Name           string    `json:"name"`
-	Color          *string   `json:"color"`
-	Billable       *bool     `json:"billable"`
-	Active         bool      `json:"active"`
-	Public         bool      `json:"public"`
-	Template       bool      `json:"template"`
-	TemplateID     *int      `json:"template_id"`
-	AutoEstimates  *bool     `json:"auto_estimates"`
-	EstimatedHours *int      `json:"estimated_hours"`
-	Rate           *float64  `json:"rate"`
-	Currency       *string   `json:"currency"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID               int       `json:"id"`
+	Name             string    `json:"name"`
+	WorkspaceID      int       `json:"workspace_id"`
+	ClientID         *int      `json:"client_id"`
+	Active           bool      `json:"active"`
+	IsPrivate        bool      `json:"is_private"`
+	Billable         *bool     `json:"billable"`
+	AutoEstimates    *bool     `json:"auto_estimates"`
+	EstimatedHours   *int      `json:"estimated_hours"`
+	EstimatedSeconds *int      `json:"estimated_seconds"`
+	ActualHours      *int      `json:"actual_hours"`
+	ActualSeconds    *int      `json:"actual_seconds"`
+	Color            string    `json:"color"`
+	Rate             float64   `json:"rate"`
+	RateLastUpdated  *string   `json:"rate_last_updated"`
+	Currency         *string   `json:"currency"`
+	Template         *bool     `json:"template"`
+	TemplateID       *int      `json:"template_id"`
+	FixedFee         float64   `json:"fixed_fee"`
+	StartDate        *string   `json:"start_date"`
+	EndDate          *string   `json:"end_date"`
+	At               time.Time `json:"at"`
+	CreatedAt        time.Time `json:"created_at"`
 }
 
 // Tag represents a Toggl tag.
