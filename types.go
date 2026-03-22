@@ -98,6 +98,82 @@ type TimeEntry struct {
 	At          time.Time  `json:"at"`
 }
 
+// Reports API response types
+
+// SummaryReportData is the response from ReportsService.SummaryReport.
+type SummaryReportData struct {
+	Groups []SummaryGroup `json:"groups"`
+}
+
+// SummaryGroup is a top-level grouping in a summary report.
+type SummaryGroup struct {
+	ID        *int              `json:"id"`
+	Seconds   int               `json:"seconds"`
+	Rates     []BillableRate    `json:"rates"`
+	SubGroups []SummarySubGroup `json:"sub_groups"`
+}
+
+// SummarySubGroup is a sub-grouping within a SummaryGroup.
+type SummarySubGroup struct {
+	ID      *int           `json:"id"`
+	Seconds int            `json:"seconds"`
+	Rates   []BillableRate `json:"rates"`
+	Title   *string        `json:"title"`
+}
+
+// DetailedTimeEntry is a single time entry row in a detailed report.
+type DetailedTimeEntry struct {
+	Billable            bool     `json:"billable"`
+	BillableAmountCents *int     `json:"billable_amount_in_cents"`
+	ClientName          *string  `json:"client_name"`
+	Currency            *string  `json:"currency"`
+	Description         *string  `json:"description"`
+	HourlyRateCents     *int     `json:"hourly_rate_in_cents"`
+	ProjectColor        *string  `json:"project_color"`
+	ProjectHex          *string  `json:"project_hex"`
+	ProjectID           *int     `json:"project_id"`
+	ProjectName         *string  `json:"project_name"`
+	RowNumber           int      `json:"row_number"`
+	TagIDs              []int    `json:"tag_ids"`
+	TagNames            []string `json:"tag_names"`
+	UserID              *int     `json:"user_id"`
+	Username            *string  `json:"username"`
+}
+
+// WeeklyReportEntry is a single row in a weekly report.
+type WeeklyReportEntry struct {
+	ProjectID *int    `json:"project_id"`
+	ClientID  *int    `json:"client_id"`
+	UserID    *int    `json:"user_id"`
+	Title     *string `json:"title"`
+	Seconds   []int   `json:"seconds"`
+}
+
+// TotalsReport is the response from ReportsService.DetailedReportTotals.
+type TotalsReport struct {
+	BillableAmountCents int           `json:"billable_amount_in_cents"`
+	LabourCostCents     int           `json:"labour_cost_in_cents"`
+	Seconds             int           `json:"seconds"`
+	TrackedDays         int           `json:"tracked_days"`
+	Resolution          string        `json:"resolution"`
+	Graph               []TotalsGraph `json:"graph"`
+	Rates               []BillableRate `json:"rates"`
+}
+
+// TotalsGraph is a single data point in the TotalsReport graph.
+type TotalsGraph struct {
+	BillableAmountCents int `json:"billable_amount_in_cents"`
+	LabourCostCents     int `json:"labour_cost_in_cents"`
+	Seconds             int `json:"seconds"`
+}
+
+// BillableRate represents an hourly rate with associated billable seconds.
+type BillableRate struct {
+	BillableSeconds int    `json:"billable_seconds"`
+	Currency        string `json:"currency"`
+	HourlyRateCents int    `json:"hourly_rate_in_cents"`
+}
+
 // Helper functions for pointer creation
 
 // String returns a pointer to the provided string value.
