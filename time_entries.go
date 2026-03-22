@@ -160,6 +160,20 @@ func (s *TimeEntriesService) CreateTimeEntry(ctx context.Context, workspaceID in
 	if opts == nil {
 		return nil, nil, fmt.Errorf("options required")
 	}
+	if opts.Start.IsZero() {
+		return nil, nil, fmt.Errorf("Start is required")
+	}
+
+	// Resolve duration: explicit > derived from Stop > default running (-1).
+	duration := -1
+	if opts.Stop != nil && opts.Duration == nil {
+		if !opts.Stop.After(opts.Start) {
+			return nil, nil, fmt.Errorf("Stop must be after Start")
+		}
+		duration = int(opts.Stop.Sub(opts.Start).Seconds())
+	} else if opts.Duration != nil {
+		duration = *opts.Duration
+	}
 
 	createdWith := opts.CreatedWith
 	if createdWith == "" {
@@ -169,10 +183,10 @@ func (s *TimeEntriesService) CreateTimeEntry(ctx context.Context, workspaceID in
 	path := fmt.Sprintf("/api/v9/workspaces/%d/time_entries", workspaceID)
 
 	body := map[string]interface{}{
-		"workspace_id":  workspaceID,
-		"start":         opts.Start.UTC().Format(time.RFC3339),
-		"created_with":  createdWith,
-		"duration":      -1,
+		"workspace_id": workspaceID,
+		"start":        opts.Start.UTC().Format(time.RFC3339),
+		"created_with": createdWith,
+		"duration":     duration,
 	}
 
 	if opts.Description != nil {
@@ -195,9 +209,6 @@ func (s *TimeEntriesService) CreateTimeEntry(ctx context.Context, workspaceID in
 	}
 	if opts.Stop != nil {
 		body["stop"] = opts.Stop.UTC().Format(time.RFC3339)
-	}
-	if opts.Duration != nil {
-		body["duration"] = *opts.Duration
 	}
 
 	entry := new(TimeEntry)

@@ -354,10 +354,43 @@ func TestTimeEntriesService_CreateTimeEntry(t *testing.T) {
 			name:        "nil options",
 			workspaceID: 1,
 			opts:        nil,
-			statusCode:  0,
-			response:    "",
-			wantID:      0,
 			wantErr:     true,
+		},
+		{
+			name:        "zero start time",
+			workspaceID: 1,
+			opts:        &CreateTimeEntryOptions{},
+			wantErr:     true,
+		},
+		{
+			name:        "stop before start",
+			workspaceID: 1,
+			opts: &CreateTimeEntryOptions{
+				Start: start,
+				Stop:  func() *time.Time { t := start.Add(-time.Hour); return &t }(),
+			},
+			wantErr: true,
+		},
+		{
+			name:        "stop equals start",
+			workspaceID: 1,
+			opts: &CreateTimeEntryOptions{
+				Start: start,
+				Stop:  &start,
+			},
+			wantErr: true,
+		},
+		{
+			name:        "stop derives duration",
+			workspaceID: 1,
+			opts: &CreateTimeEntryOptions{
+				Start: start,
+				Stop:  func() *time.Time { t := start.Add(time.Hour); return &t }(),
+			},
+			statusCode: http.StatusOK,
+			response:   timeEntryJSON,
+			wantID:     123,
+			wantErr:    false,
 		},
 		{
 			name:        "unauthorized",
@@ -399,10 +432,19 @@ func TestTimeEntriesService_CreateTimeEntry(t *testing.T) {
 					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
-				if _, ok := body["duration"]; !ok {
+				dur, ok := body["duration"].(float64)
+				if !ok {
 					t.Errorf("body missing required field duration")
 					w.WriteHeader(http.StatusBadRequest)
 					return
+				}
+				// "stop derives duration" case: Stop-Start == 1h → 3600s.
+				if tt.opts != nil && tt.opts.Stop != nil && tt.opts.Duration == nil {
+					if int(dur) != 3600 {
+						t.Errorf("derived duration = %d, want 3600", int(dur))
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.statusCode)
