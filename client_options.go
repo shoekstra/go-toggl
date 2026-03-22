@@ -16,15 +16,21 @@ func WithBaseURL(baseURL string) ClientOption {
 }
 
 // WithHTTPClient sets the HTTP client for API requests.
+// A nil value is ignored and the default client is retained.
 func WithHTTPClient(httpClient *http.Client) ClientOption {
 	return func(c *Client) {
-		c.httpClient = httpClient
+		if httpClient != nil {
+			c.httpClient = httpClient
+		}
 	}
 }
 
-// WithTimeout sets the timeout for API requests.
+// WithTimeout sets the timeout for API requests. It can be used alongside
+// WithHTTPClient in any order; the timeout is always applied after all options
+// are processed. Passing zero explicitly disables the timeout.
 func WithTimeout(timeout time.Duration) ClientOption {
 	return func(c *Client) {
-		c.httpClient.Timeout = timeout
+		c.timeout = timeout
+		c.timeoutSet = true
 	}
 }
