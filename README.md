@@ -28,8 +28,11 @@ func main() {
     log.Fatal(err)
   }
 
-  // Use the client
-  // te, resp, err := client.GetTimeEntry(context.Background(), 12345)
+  te, resp, err := client.TimeEntries.GetTimeEntry(context.Background(), 12345)
+  if err != nil {
+    log.Fatal(err)
+  }
+  log.Printf("time entry %d (status %d)", te.ID, resp.StatusCode)
 }
 ```
 
