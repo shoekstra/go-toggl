@@ -40,6 +40,7 @@ func main() {
 
 - **TimeEntries** - Time entry management
 - **Projects** - Project management
+- **Clients** - Client management
 - **Workspaces** - Workspace information
 
 ## Development
