@@ -145,6 +145,16 @@ func TestClientsService_ListClients_QueryParams(t *testing.T) {
 			opts:       &ListClientsOptions{Status: String("both"), Name: String("Corp")},
 			wantParams: map[string]string{"status": "both", "name": "Corp"},
 		},
+		{
+			name:       "pagination",
+			opts:       &ListClientsOptions{Page: Int(2), PerPage: Int(25)},
+			wantParams: map[string]string{"page": "2", "per_page": "25"},
+		},
+		{
+			name:        "no pagination params when not set",
+			opts:        &ListClientsOptions{},
+			wantNoParam: []string{"page", "per_page"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -174,16 +184,46 @@ func TestClientsService_ListClients_QueryParams(t *testing.T) {
 	}
 }
 
-func TestClientsService_ListClients_InvalidStatus(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Error("handler should not be called for invalid status")
-		w.WriteHeader(http.StatusBadRequest)
-	})
+func TestClientsService_ListClients_InvalidOptions(t *testing.T) {
+	tests := []struct {
+		name string
+		opts *ListClientsOptions
+	}{
+		{
+			name: "invalid status",
+			opts: &ListClientsOptions{Status: String("invalid")},
+		},
+		{
+			name: "page zero",
+			opts: &ListClientsOptions{Page: Int(0)},
+		},
+		{
+			name: "page negative",
+			opts: &ListClientsOptions{Page: Int(-1)},
+		},
+		{
+			name: "per_page zero",
+			opts: &ListClientsOptions{PerPage: Int(0)},
+		},
+		{
+			name: "per_page negative",
+			opts: &ListClientsOptions{PerPage: Int(-5)},
+		},
+	}
 
-	c := testClient(t, handler)
-	_, _, err := c.Clients.ListClients(context.Background(), 100, &ListClientsOptions{Status: String("invalid")})
-	if err == nil {
-		t.Fatal("ListClients() expected error for invalid status, got nil")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Error("handler should not be called for invalid options")
+				w.WriteHeader(http.StatusBadRequest)
+			})
+
+			c := testClient(t, handler)
+			_, _, err := c.Clients.ListClients(context.Background(), 100, tt.opts)
+			if err == nil {
+				t.Fatalf("ListClients() expected error for %s, got nil", tt.name)
+			}
+		})
 	}
 }
 

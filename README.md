@@ -36,6 +36,64 @@ func main() {
 }
 ```
 
+## Pagination
+
+List endpoints that support pagination accept `Page` and `PerPage` options.
+The `Response` returned by every method includes a `Pagination` field with
+metadata parsed from response headers.
+
+### Page-based pagination
+
+```go
+perPage := 50
+page := 1
+for {
+    projects, resp, err := client.Projects.ListProjects(ctx, workspaceID, &toggl.ListProjectsOptions{
+        Page:    toggl.Int(page),
+        PerPage: toggl.Int(perPage),
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    // process projects...
+
+    // TotalPages is 0 when the endpoint does not return X-Pages header;
+    // in that case stop when the page returns fewer items than requested.
+    if resp.Pagination.TotalPages > 0 && resp.Pagination.CurrentPage >= resp.Pagination.TotalPages {
+        break
+    }
+    if resp.Pagination.TotalPages == 0 && len(projects) < perPage {
+        break
+    }
+    page++
+}
+```
+
+### Cursor-based pagination (detailed reports)
+
+The detailed reports endpoint uses cursor-based pagination via the
+`X-Next-ID` and `X-Next-Row-Number` response headers.
+
+```go
+var firstID, firstRowNumber *int
+for {
+    entries, resp, err := client.Reports.DetailedReport(ctx, workspaceID, &toggl.DetailedReportOptions{
+        FirstID:        firstID,
+        FirstRowNumber: firstRowNumber,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    // process entries...
+
+    if resp.Pagination.NextID == 0 {
+        break
+    }
+    firstID = toggl.Int(resp.Pagination.NextID)
+    firstRowNumber = toggl.Int(resp.Pagination.NextRowNumber)
+}
+```
+
 ## Services
 
 - **TimeEntries** - Time entry management
