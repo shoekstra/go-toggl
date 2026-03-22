@@ -43,6 +43,7 @@ func main() {
 - **Tags** - Tag management
 - **Clients** - Client management
 - **Workspaces** - Workspace information
+- **Reports** - Report generation (Reports API)
 
 ## Development
 
