@@ -4,6 +4,11 @@
       "changelog-path": "CHANGELOG.md",
       "changelog-sections": [
         {
+          "type": "ci",
+          "section": "🤖 CI",
+          "hidden": false
+        },
+        {
           "type": "feat",
           "section": "🚀 Features",
           "hidden": false
