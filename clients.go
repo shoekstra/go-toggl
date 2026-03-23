@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 )
 
 // ClientsService handles operations related to clients.
@@ -19,6 +20,10 @@ type ListClientsOptions struct {
 	Status *string
 	// Name filters clients by name (case-insensitive).
 	Name *string
+	// Page is the page number for pagination.
+	Page *int
+	// PerPage is the number of results per page.
+	PerPage *int
 }
 
 // CreateClientOptions specifies the parameters to
@@ -72,6 +77,18 @@ func (s *ClientsService) ListClients(ctx context.Context, workspaceID int, opts 
 		}
 		if opts.Name != nil {
 			params.Set("name", *opts.Name)
+		}
+		if opts.Page != nil {
+			if *opts.Page < 1 {
+				return nil, nil, fmt.Errorf("invalid page %d: must be greater than 0", *opts.Page)
+			}
+			params.Set("page", strconv.Itoa(*opts.Page))
+		}
+		if opts.PerPage != nil {
+			if *opts.PerPage < 1 {
+				return nil, nil, fmt.Errorf("invalid per_page %d: must be greater than 0", *opts.PerPage)
+			}
+			params.Set("per_page", strconv.Itoa(*opts.PerPage))
 		}
 		if q := params.Encode(); q != "" {
 			path += "?" + q
