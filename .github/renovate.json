@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "pinDigests": true,
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group all GitHub Actions updates into a single PR",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "automerge": false
+    },
+    {
+      "description": "Group Go toolchain updates separately from module updates",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["golang"],
+      "groupName": "Go toolchain"
+    }
+  ]
+}
