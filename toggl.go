@@ -7,17 +7,19 @@ import (
 )
 
 const (
-	defaultBaseURL     = "https://api.track.toggl.com"
-	defaultTimeout     = 30 * time.Second
-	userAgent          = "go-toggl/1.0.0"
-	basicAuthPassword  = "api_token"
+	defaultBaseURL    = "https://api.track.toggl.com"
+	defaultTimeout    = 30 * time.Second
+	userAgent         = "go-toggl"
+	basicAuthPassword = "api_token"
 )
 
 // Client is the Toggl Track API client.
 type Client struct {
-	baseURL    string
-	token      string
-	httpClient *http.Client
+	baseURL     string
+	token       string
+	httpClient  *http.Client
+	timeout     time.Duration
+	timeoutSet  bool
 
 	// Services
 	TimeEntries *TimeEntriesService
@@ -29,25 +31,40 @@ type Client struct {
 }
 
 // NewClient creates a new Toggl API client with the given token.
+//
+// Use the functional options (WithBaseURL, WithHTTPClient, WithTimeout) to
+// customise the client. When WithTimeout is used it takes effect regardless of
+// whether WithHTTPClient appears before or after it. When only WithHTTPClient
+// is provided, the custom client's existing Timeout is preserved; if the custom
+// client has no timeout set, defaultTimeout is applied.
 func NewClient(token string, opts ...ClientOption) (*Client, error) {
 	if token == "" {
 		return nil, fmt.Errorf("token cannot be empty")
 	}
 
 	c := &Client{
-		baseURL: defaultBaseURL,
-		token:   token,
-		httpClient: &http.Client{
-			Timeout: defaultTimeout,
-		},
+		baseURL:    defaultBaseURL,
+		token:      token,
+		httpClient: &http.Client{},
+		// timeout is zero until WithTimeout sets it explicitly.
 	}
 
-	// Apply options
+	// Apply options.
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	// Initialize services
+	// Resolve the final timeout:
+	//   - WithTimeout was called: always use that value (even zero).
+	//   - WithHTTPClient was called without WithTimeout: preserve the custom
+	//     client's timeout if it has one, otherwise apply defaultTimeout.
+	if c.timeoutSet {
+		c.httpClient.Timeout = c.timeout
+	} else if c.httpClient.Timeout == 0 {
+		c.httpClient.Timeout = defaultTimeout
+	}
+
+	// Initialize services.
 	c.TimeEntries = &TimeEntriesService{client: c}
 	c.Projects = &ProjectsService{client: c}
 	c.Tags = &TagsService{client: c}
@@ -56,24 +73,4 @@ func NewClient(token string, opts ...ClientOption) (*Client, error) {
 	c.Reports = &ReportsService{client: c}
 
 	return c, nil
-}
-
-// BaseURL returns the base URL of the client.
-func (c *Client) BaseURL() string {
-	return c.baseURL
-}
-
-// SetBaseURL sets the base URL of the client.
-func (c *Client) SetBaseURL(baseURL string) {
-	c.baseURL = baseURL
-}
-
-// HTTPClient returns the HTTP client used by the Toggl client.
-func (c *Client) HTTPClient() *http.Client {
-	return c.httpClient
-}
-
-// SetHTTPClient sets the HTTP client used by the Toggl client.
-func (c *Client) SetHTTPClient(httpClient *http.Client) {
-	c.httpClient = httpClient
 }
