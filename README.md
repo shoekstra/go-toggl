@@ -110,7 +110,7 @@ for {
 
 ### Prerequisites
 
-- Go 1.21+
+- Go 1.22+
 - Task (<https://taskfile.dev>)
 - golangci-lint
 
