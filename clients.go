@@ -62,7 +62,7 @@ type RestoreClientOptions struct {
 // API: GET /api/v9/workspaces/{workspace_id}/clients
 //
 // See: https://engineering.toggl.com/docs/api/clients#get-list-clients
-func (s *ClientsService) ListClients(ctx context.Context, workspaceID int, opts *ListClientsOptions) ([]*TogglClient, *Response, error) {
+func (s *ClientsService) ListClients(ctx context.Context, workspaceID int, opts *ListClientsOptions) ([]*WorkspaceClient, *Response, error) {
 	path := fmt.Sprintf("/api/v9/workspaces/%d/clients", workspaceID)
 
 	if opts != nil {
@@ -95,7 +95,7 @@ func (s *ClientsService) ListClients(ctx context.Context, workspaceID int, opts 
 		}
 	}
 
-	var clients []*TogglClient
+	var clients []*WorkspaceClient
 	resp, err := s.client.get(ctx, path, &clients)
 	if err != nil {
 		return nil, resp, err
@@ -109,10 +109,10 @@ func (s *ClientsService) ListClients(ctx context.Context, workspaceID int, opts 
 // API: GET /api/v9/workspaces/{workspace_id}/clients/{client_id}
 //
 // See: https://engineering.toggl.com/docs/api/clients#get-load-client-by-id
-func (s *ClientsService) GetClient(ctx context.Context, workspaceID, clientID int) (*TogglClient, *Response, error) {
+func (s *ClientsService) GetClient(ctx context.Context, workspaceID, clientID int) (*WorkspaceClient, *Response, error) {
 	path := fmt.Sprintf("/api/v9/workspaces/%d/clients/%d", workspaceID, clientID)
 
-	c := new(TogglClient)
+	c := new(WorkspaceClient)
 	resp, err := s.client.get(ctx, path, c)
 	if err != nil {
 		return nil, resp, err
@@ -126,7 +126,7 @@ func (s *ClientsService) GetClient(ctx context.Context, workspaceID, clientID in
 // API: POST /api/v9/workspaces/{workspace_id}/clients
 //
 // See: https://engineering.toggl.com/docs/api/clients#post-create-client
-func (s *ClientsService) CreateClient(ctx context.Context, workspaceID int, opts *CreateClientOptions) (*TogglClient, *Response, error) {
+func (s *ClientsService) CreateClient(ctx context.Context, workspaceID int, opts *CreateClientOptions) (*WorkspaceClient, *Response, error) {
 	if opts == nil {
 		return nil, nil, fmt.Errorf("options required")
 	}
@@ -147,7 +147,7 @@ func (s *ClientsService) CreateClient(ctx context.Context, workspaceID int, opts
 		body["external_reference"] = *opts.ExternalReference
 	}
 
-	c := new(TogglClient)
+	c := new(WorkspaceClient)
 	resp, err := s.client.post(ctx, path, body, c)
 	if err != nil {
 		return nil, resp, err
@@ -161,7 +161,7 @@ func (s *ClientsService) CreateClient(ctx context.Context, workspaceID int, opts
 // API: PUT /api/v9/workspaces/{workspace_id}/clients/{client_id}
 //
 // See: https://engineering.toggl.com/docs/api/clients#put-change-client
-func (s *ClientsService) UpdateClient(ctx context.Context, workspaceID, clientID int, opts *UpdateClientOptions) (*TogglClient, *Response, error) {
+func (s *ClientsService) UpdateClient(ctx context.Context, workspaceID, clientID int, opts *UpdateClientOptions) (*WorkspaceClient, *Response, error) {
 	if opts == nil {
 		return nil, nil, fmt.Errorf("options required")
 	}
@@ -184,7 +184,7 @@ func (s *ClientsService) UpdateClient(ctx context.Context, workspaceID, clientID
 		return nil, nil, fmt.Errorf("at least one field must be set")
 	}
 
-	c := new(TogglClient)
+	c := new(WorkspaceClient)
 	resp, err := s.client.put(ctx, path, body, c)
 	if err != nil {
 		return nil, resp, err
@@ -232,7 +232,7 @@ func (s *ClientsService) ArchiveClient(ctx context.Context, workspaceID, clientI
 // API: POST /api/v9/workspaces/{workspace_id}/clients/{client_id}/restore
 //
 // See: https://engineering.toggl.com/docs/api/clients#post-restore-client
-func (s *ClientsService) RestoreClient(ctx context.Context, workspaceID, clientID int, opts *RestoreClientOptions) (*TogglClient, *Response, error) {
+func (s *ClientsService) RestoreClient(ctx context.Context, workspaceID, clientID int, opts *RestoreClientOptions) (*WorkspaceClient, *Response, error) {
 	path := fmt.Sprintf("/api/v9/workspaces/%d/clients/%d/restore", workspaceID, clientID)
 
 	var body interface{}
@@ -249,7 +249,7 @@ func (s *ClientsService) RestoreClient(ctx context.Context, workspaceID, clientI
 		}
 	}
 
-	c := new(TogglClient)
+	c := new(WorkspaceClient)
 	resp, err := s.client.post(ctx, path, body, c)
 	if err != nil {
 		return nil, resp, err
