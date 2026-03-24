@@ -94,8 +94,8 @@ func (t *Tag) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// TogglClient represents a Toggl client (customer/organization).
-type TogglClient struct {
+// WorkspaceClient represents a Toggl client (customer/organization) within a workspace.
+type WorkspaceClient struct {
 	ID                int       `json:"id"`
 	Name              string    `json:"name"`
 	WorkspaceID       int       `json:"wid"`
