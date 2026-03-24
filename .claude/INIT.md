@@ -1,98 +1,87 @@
 # Claude Code Initialization for go-toggl
 
-## Before Starting Work
+## Project Status
 
-When you run Claude Code for the first time, give this prompt:
+go-toggl is a complete, released Go client library for the Toggl Track API v9.
+**Current version: v0.1.0** (tagged and released via release-please).
 
-```
-"I'm working on go-toggl, a service-oriented Go client for Toggl Track API v9.
+All six services are implemented and merged to main:
 
-Before I give you work to do, please read and understand these context files:
-- .claude/ARCHITECTURE.md (service design, what to build)
-- .claude/CONVENTIONS.md (code style, commit messages, branch names)
-- .claude/IMPLEMENTATION_PATTERNS.md (code templates to follow)
-- .claude/V8_REFERENCE.md (patterns from the v8 SDK)
-- .claude/swagger-reports.json (Reports OpenAPI spec)
-- .claude/swagger-toggl-api.json (Toggl API OpenAPI spec)
-- .claude/swagger-webhooks.json (Webhooks OpenAPI spec)
+- TimeEntriesService — full CRUD + Start/Stop
+- ProjectsService — full CRUD
+- TagsService — List, Create, Update, Delete
+- ClientsService — full CRUD + Archive/Restore
+- WorkspacesService — List, Get, Update
+- ReportsService — Summary, Detailed, Weekly + PDF/CSV exports
 
-Then tell me:
-1. What you understand about the project
-2. The services to implement
-3. The coding conventions you'll follow
-4. Confirm you understand the template patterns
-5. Ask any clarifying questions
+## Starting a New Session
 
-Then I'll give you implementation tasks."
-```
-
-Claude will:
-
-1. Read all context files
-2. Confirm understanding
-3. Be ready to implement services correctly
-
-## Subsequent Sessions
-
-For later sessions, shorter version:
+Tell Claude:
 
 ```
-"Refresh your understanding of go-toggl by re-reading:
-- .claude/CONVENTIONS.md (for commit format)
-- .claude/IMPLEMENTATION_PATTERNS.md (for code templates)
-
-Then tell me you're ready and what service to implement."
+"I'm continuing work on go-toggl, a released Go client library for the Toggl
+Track API v9. Check git log and your memory for recent context, then tell me
+you're ready."
 ```
 
-Or if continuing work:
+Claude should then check:
 
-```
-"Continue from where we left off. Review git log to see what's been implemented,
-then I'll tell you what to work on next."
-```
+- `git log --oneline -20` to see recent activity
+- Memory files for decisions and feedback
+- Any open PRs or branches
 
-## What Claude Will Do
+## Conventions (summarised)
 
-With proper context, Claude Code will:
+- Branch: `feat/X`, `fix/X`, `chore/X`, `ci/X`, `refactor/X`
+- Always branch from `main`
+- Conventional commits with `-s` (DCO sign-off)
+- One logical change per PR
+- After each commit, user pushes and opens PR; Claude waits for review feedback
+- CodeRabbit reviews PRs — process findings with "Verify each finding against
+  the current code and only fix it if needed"
+- Amend commits rather than adding fix commits (user force-pushes)
+- Use `git rebase -i` to squash, never `git reset --soft`
 
-- ✅ Write service methods following patterns
-- ✅ Write comprehensive unit tests
-- ✅ Use conventional commit messages
-- ✅ Format code properly (task fmt)
-- ✅ Check linters (task lint)
-- ✅ Run tests and fix failures
-- ✅ Commit to git automatically
+## CI / Tooling
 
-## Typical Workflow
+- Tests: `go test ./...` — must pass before committing
+- Lint: golangci-lint via `task lint` (improvements pending — see next tasks)
+- Coverage: Codecov — patch coverage is checked on PRs
+- Release: release-please (GitHub App token via `shoekstra-ci` app)
+- Renovate: Mend GitHub App — manages dependency and Actions updates,
+  config at `.github/renovate.json`
 
-```bash
-# 1. Start Claude Code
-cd ~/projects/go-toggl
-claude code
+## Architecture
 
-# 2. Give initialization prompt (copy from above)
-# Claude reads context and confirms understanding
+- Service-oriented (go-gitlab pattern): `client.TimeEntries.X`, `client.Projects.X`, etc.
+- Base URL: `https://api.track.toggl.com`; main API: `/api/v9/`; Reports API: `/reports/api/v3/`
+- All Reports endpoints use POST; export methods return `[]byte`
+- Auth: Basic auth with token + "api_token"
+- Pagination: `Pagination` struct on every `Response`; headers parsed automatically
+- Options structs use pointer fields + `json:",omitempty"` for body serialisation
 
-# 3. Give implementation task
-# "Implement TimeEntriesService with full CRUD, comprehensive tests, and commit"
+## Pending Work
 
-# 4. Claude:
-#    - Writes time_entries.go with all methods
-#    - Writes time_entries_test.go with tests
-#    - Runs task fmt
-#    - Runs task lint
-#    - Runs task test
-#    - Commits to git with conventional message
+1. **golangci-lint improvements** — branch `chore/golangci-lint`
 
-# 5. Review output and give next task
-# "Implement ProjectsService with full CRUD..."
+   - Add `errcheck`, `staticcheck`, `gosimple` linters at minimum
+   - Add `godot` for godoc comment consistency
+   - Set explicit `line-length` under `linters-settings.lll`
+   - Fix `develop` branch trigger leftover in `lint.yaml`
+   - Fix any new findings surfaced by the additional linters
 
-# 6. Repeat for each service
-```
+2. **GetTag** — not yet implemented (documented in ARCHITECTURE.md but missing
+   from tags.go). Should be done via `feat/GetTag` branch.
 
-## Tips for Success
+3. **Examples** — `examples/` directory is empty; deferred until after v0.1.0.
+   One file per service (e.g. `examples/time_entries.go`), not one directory per service.
 
-- **Be specific**: Don't say "implement services", say "implement TimeEntriesService with ListTimeEntries, GetTimeEntry, CreateTimeEntry, UpdateTimeEntry, DeleteTimeEntry"
-- **Reference files**: "Following IMPLEMENTATION_PATTERNS.md, implement..."
-- **Ask for validation**: "Run 'task all' and fix any failures"
-- **Request commits**: "Commit with 'feat(ServiceName): add CRUD operations'"
+## Key Files
+
+- `toggl.go` — Client struct, NewClient, functional options pattern
+- `client_options.go` — WithBaseURL, WithHTTPClient, WithTimeout
+- `request.go` — HTTP layer, Response struct, Pagination parsing
+- `types.go` — all shared types including Tag.UnmarshalJSON for backwards compat
+- `errors.go` — ErrorResponse
+- `.github/renovate.json` — Renovate config (pinDigests, grouping rules)
+- `release-please-config.json` — release-please config (go release type)
