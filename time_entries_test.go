@@ -250,27 +250,25 @@ func TestTimeEntriesService_GetRunningTimeEntry(t *testing.T) {
 		statusCode int
 		response   string
 		wantID     int
+		wantNil    bool
 		wantErr    bool
 	}{
 		{
-			name:       "success",
+			name:       "running entry exists",
 			statusCode: http.StatusOK,
 			response:   timeEntryJSON,
 			wantID:     123,
-			wantErr:    false,
 		},
 		{
-			name:       "no running entry",
-			statusCode: http.StatusNotFound,
-			response:   `{"error": "not found"}`,
-			wantID:     0,
-			wantErr:    true,
+			name:       "no running entry — API returns null/200",
+			statusCode: http.StatusOK,
+			response:   "null",
+			wantNil:    true,
 		},
 		{
 			name:       "unauthorized",
 			statusCode: http.StatusUnauthorized,
 			response:   `{"error": "unauthorized"}`,
-			wantID:     0,
 			wantErr:    true,
 		},
 	}
@@ -299,7 +297,10 @@ func TestTimeEntriesService_GetRunningTimeEntry(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("GetRunningTimeEntry() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if !tt.wantErr && entry.ID != tt.wantID {
+			if tt.wantNil && entry != nil {
+				t.Errorf("GetRunningTimeEntry() = %+v, want nil", entry)
+			}
+			if !tt.wantErr && !tt.wantNil && entry.ID != tt.wantID {
 				t.Errorf("GetRunningTimeEntry() ID = %d, want %d", entry.ID, tt.wantID)
 			}
 		})
