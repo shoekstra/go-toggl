@@ -7,6 +7,38 @@ import (
 
 // Common types
 
+// Me represents the authenticated user's profile.
+type Me struct {
+	// ID is the user's unique identifier.
+	ID int `json:"id"`
+	// Email is the user's email address.
+	Email string `json:"email"`
+	// Fullname is the user's display name.
+	Fullname string `json:"fullname"`
+	// Timezone is the user's configured IANA timezone (e.g. "Europe/Amsterdam").
+	Timezone string `json:"timezone"`
+	// DefaultWorkspaceID is the ID of the user's default workspace.
+	DefaultWorkspaceID int `json:"default_workspace_id"`
+	// BeginningOfWeek is the first day of the week: 0 = Sunday, 1 = Monday, … 6 = Saturday.
+	BeginningOfWeek int `json:"beginning_of_week"`
+	// ImageURL is the URL of the user's profile image.
+	ImageURL string `json:"image_url"`
+	// CountryID is the user's country (may be absent).
+	CountryID *int `json:"country_id"`
+	// HasPassword indicates whether the account has a password set.
+	HasPassword bool `json:"has_password"`
+	// OpenIDEnabled indicates whether OpenID login is enabled for this account.
+	OpenIDEnabled bool `json:"openid_enabled"`
+	// APIToken is the user's API token (identical to the token used to authenticate this request).
+	APIToken string `json:"api_token"`
+	// At is the timestamp of the most recent change to the user record.
+	At time.Time `json:"at"`
+	// CreatedAt is when the account was created.
+	CreatedAt time.Time `json:"created_at"`
+	// UpdatedAt is when the account was last updated.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 // Workspace represents a Toggl workspace.
 type Workspace struct {
 	ID                          int       `json:"id"`

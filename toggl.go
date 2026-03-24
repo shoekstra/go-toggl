@@ -22,6 +22,7 @@ type Client struct {
 	timeoutSet bool
 
 	// Services
+	Me          *MeService
 	TimeEntries *TimeEntriesService
 	Projects    *ProjectsService
 	Tags        *TagsService
@@ -65,6 +66,7 @@ func NewClient(token string, opts ...ClientOption) (*Client, error) {
 	}
 
 	// Initialize services.
+	c.Me = &MeService{client: c}
 	c.TimeEntries = &TimeEntriesService{client: c}
 	c.Projects = &ProjectsService{client: c}
 	c.Tags = &TagsService{client: c}
