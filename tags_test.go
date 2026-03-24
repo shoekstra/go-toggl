@@ -257,6 +257,111 @@ func TestTagsService_ListTags_Fields(t *testing.T) {
 	})
 }
 
+func TestTagsService_GetTag(t *testing.T) {
+	tests := []struct {
+		name       string
+		tagID      int
+		statusCode int
+		response   string
+		wantID     int
+		wantErr    bool
+	}{
+		{
+			name:       "success",
+			tagID:      1,
+			statusCode: http.StatusOK,
+			response:   tagJSON,
+			wantID:     1,
+			wantErr:    false,
+		},
+		{
+			name:       "not found",
+			tagID:      999,
+			statusCode: http.StatusNotFound,
+			response:   `{"error": "not found"}`,
+			wantErr:    true,
+		},
+		{
+			name:       "unauthorized",
+			tagID:      1,
+			statusCode: http.StatusUnauthorized,
+			response:   `{"error": "unauthorized"}`,
+			wantErr:    true,
+		},
+		{
+			name:       "server error",
+			tagID:      1,
+			statusCode: http.StatusInternalServerError,
+			response:   `{"error": "internal server error"}`,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wantPath := fmt.Sprintf("/api/v9/workspaces/100/tags/%d", tt.tagID)
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method != http.MethodGet {
+					t.Errorf("expected GET, got %s", r.Method)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				if r.URL.Path != wantPath {
+					t.Errorf("expected path %s, got %s", wantPath, r.URL.Path)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				w.Write([]byte(tt.response))
+			})
+
+			client := testClient(t, handler)
+			tag, _, err := client.Tags.GetTag(context.Background(), 100, tt.tagID)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("GetTag() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && tag.ID != tt.wantID {
+				t.Errorf("GetTag() ID = %d, want %d", tag.ID, tt.wantID)
+			}
+		})
+	}
+}
+
+func TestTagsService_GetTag_Fields(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(tagJSONFull))
+	})
+
+	client := testClient(t, handler)
+	tag, _, err := client.Tags.GetTag(context.Background(), 100, 2)
+	if err != nil {
+		t.Fatalf("GetTag() error = %v", err)
+	}
+
+	if tag.ID != 2 {
+		t.Errorf("ID = %d, want 2", tag.ID)
+	}
+	if tag.Name != "frontend" {
+		t.Errorf("Name = %q, want %q", tag.Name, "frontend")
+	}
+	if tag.WorkspaceID != 100 {
+		t.Errorf("WorkspaceID = %d, want 100", tag.WorkspaceID)
+	}
+	if tag.DeletedAt == nil {
+		t.Fatal("DeletedAt = nil, want non-nil")
+	}
+	if tag.IntegrationExtID == nil || *tag.IntegrationExtID != "EXT-TAG-001" {
+		t.Errorf("IntegrationExtID = %v, want %q", tag.IntegrationExtID, "EXT-TAG-001")
+	}
+	if tag.IntegrationExtType == nil || *tag.IntegrationExtType != "jira" {
+		t.Errorf("IntegrationExtType = %v, want %q", tag.IntegrationExtType, "jira")
+	}
+}
+
 func TestTagsService_CreateTag(t *testing.T) {
 	tests := []struct {
 		name       string
