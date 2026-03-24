@@ -6,6 +6,11 @@ tasks:
     cmds:
       - go test -v -race -coverprofile=coverage.out ./...
 
+  test:integration:
+    desc: Run integration tests against the real Toggl API (requires TOGGL_API_TOKEN and TOGGL_WORKSPACE_ID)
+    cmds:
+      - go test -v -tags integration -timeout 10m -p 1 ./...
+
   test:coverage:
     desc: Run tests and display coverage
     cmds:
