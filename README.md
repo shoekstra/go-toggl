@@ -2,6 +2,8 @@
 
 A modern Go client library for the Toggl Track API v9.
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/shoekstra/go-toggl.svg)](https://pkg.go.dev/github.com/shoekstra/go-toggl)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shoekstra/go-toggl)](https://goreportcard.com/report/github.com/shoekstra/go-toggl)
 [![codecov](https://codecov.io/github/shoekstra/go-toggl/graph/badge.svg?token=K6DEQB183Y)](https://codecov.io/github/shoekstra/go-toggl)
 
 ## Installation
@@ -96,6 +98,7 @@ for {
 
 ## Services
 
+- **Me** - Authenticated user profile
 - **TimeEntries** - Time entry management
 - **Projects** - Project management
 - **Tags** - Tag management
