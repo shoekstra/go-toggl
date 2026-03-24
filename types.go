@@ -63,18 +63,16 @@ type Project struct {
 
 // Tag represents a Toggl tag.
 type Tag struct {
-	ID                  int        `json:"id"`
-	Name                string     `json:"name"`
-	// WorkspaceID is the workspace this tag belongs to (json: "workspace_id").
-	WorkspaceID         int        `json:"workspace_id"`
-	// Workspace is an alias for WorkspaceID retained for backwards compatibility.
-	Workspace           int        `json:"-"`
-	CreatorID           int        `json:"creator_id"`
-	At                  time.Time  `json:"at"`
-	DeletedAt           *time.Time `json:"deleted_at"`
-	IntegrationExtID    *string    `json:"integration_ext_id"`
-	IntegrationExtType  *string    `json:"integration_ext_type"`
-	Permissions         []string   `json:"permissions"`
+	ID                 int        `json:"id"`
+	Name               string     `json:"name"`
+	WorkspaceID        int        `json:"workspace_id"` // WorkspaceID is the workspace this tag belongs to (json: "workspace_id").
+	Workspace          int        `json:"-"`            // Workspace is an alias for WorkspaceID retained for backwards compatibility.
+	CreatorID          int        `json:"creator_id"`
+	At                 time.Time  `json:"at"`
+	DeletedAt          *time.Time `json:"deleted_at"`
+	IntegrationExtID   *string    `json:"integration_ext_id"`
+	IntegrationExtType *string    `json:"integration_ext_type"`
+	Permissions        []string   `json:"permissions"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler for Tag, accepting both
@@ -181,12 +179,12 @@ type WeeklyReportEntry struct {
 
 // TotalsReport is the response from ReportsService.DetailedReportTotals.
 type TotalsReport struct {
-	BillableAmountCents int           `json:"billable_amount_in_cents"`
-	LabourCostCents     int           `json:"labour_cost_in_cents"`
-	Seconds             int           `json:"seconds"`
-	TrackedDays         int           `json:"tracked_days"`
-	Resolution          string        `json:"resolution"`
-	Graph               []TotalsGraph `json:"graph"`
+	BillableAmountCents int            `json:"billable_amount_in_cents"`
+	LabourCostCents     int            `json:"labour_cost_in_cents"`
+	Seconds             int            `json:"seconds"`
+	TrackedDays         int            `json:"tracked_days"`
+	Resolution          string         `json:"resolution"`
+	Graph               []TotalsGraph  `json:"graph"`
 	Rates               []BillableRate `json:"rates"`
 }
 

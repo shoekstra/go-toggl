@@ -15,11 +15,11 @@ const (
 
 // Client is the Toggl Track API client.
 type Client struct {
-	baseURL     string
-	token       string
-	httpClient  *http.Client
-	timeout     time.Duration
-	timeoutSet  bool
+	baseURL    string
+	token      string
+	httpClient *http.Client
+	timeout    time.Duration
+	timeoutSet bool
 
 	// Services
 	TimeEntries *TimeEntriesService

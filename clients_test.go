@@ -685,12 +685,12 @@ func TestClientsService_DeleteClient(t *testing.T) {
 
 func TestClientsService_ArchiveClient(t *testing.T) {
 	tests := []struct {
-		name        string
-		clientID    int
-		statusCode  int
-		response    string
-		wantItems   []int
-		wantErr     bool
+		name       string
+		clientID   int
+		statusCode int
+		response   string
+		wantItems  []int
+		wantErr    bool
 	}{
 		{
 			name:       "success — no archived projects",

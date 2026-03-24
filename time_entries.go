@@ -161,14 +161,14 @@ func (s *TimeEntriesService) CreateTimeEntry(ctx context.Context, workspaceID in
 		return nil, nil, fmt.Errorf("options required")
 	}
 	if opts.Start.IsZero() {
-		return nil, nil, fmt.Errorf("Start is required")
+		return nil, nil, fmt.Errorf("start is required")
 	}
 
 	// Resolve duration: explicit > derived from Stop > default running (-1).
 	duration := -1
 	if opts.Stop != nil && opts.Duration == nil {
 		if !opts.Stop.After(opts.Start) {
-			return nil, nil, fmt.Errorf("Stop must be after Start")
+			return nil, nil, fmt.Errorf("stop must be after start")
 		}
 		duration = int(opts.Stop.Sub(opts.Start).Seconds())
 	} else if opts.Duration != nil {
