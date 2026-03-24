@@ -40,6 +40,26 @@ func TestParseErrorMessage(t *testing.T) {
 			want: "Not Found",
 		},
 		{
+			name: "empty body",
+			body: "",
+			want: "empty response",
+		},
+		{
+			name: "whitespace-only body",
+			body: "   \n\t  ",
+			want: "empty response",
+		},
+		{
+			name: "whitespace-only message field",
+			body: `{"message": "   "}`,
+			want: `{"message": "   "}`,
+		},
+		{
+			name: "whitespace-only error field",
+			body: `{"error": "\t\n"}`,
+			want: `{"error": "\t\n"}`,
+		},
+		{
 			name: "empty JSON object",
 			body: `{}`,
 			want: "{}",

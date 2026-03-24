@@ -33,16 +33,19 @@ func parseErrorMessage(body []byte) string {
 		Error   string `json:"error"`
 	}
 	if err := json.Unmarshal(body, &payload); err == nil {
-		if payload.Message != "" {
-			return payload.Message
+		if s := strings.TrimSpace(payload.Message); s != "" {
+			return s
 		}
-		if payload.Error != "" {
-			return payload.Error
+		if s := strings.TrimSpace(payload.Error); s != "" {
+			return s
 		}
 	}
 
 	const maxLen = 200
 	s := strings.TrimSpace(string(body))
+	if s == "" {
+		return "empty response"
+	}
 	if len(s) > maxLen {
 		return s[:maxLen] + "..."
 	}
