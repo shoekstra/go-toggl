@@ -1,0 +1,53 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+linters:
+  default: none
+  enable:
+    # Correctness
+    - errcheck # Unhandled errors
+    - govet # Go vet checks
+    - staticcheck # Comprehensive static analysis
+    - ineffassign # Ineffectual assignments
+    - unused # Unused code
+
+    # Style / simplification
+    - misspell # Spelling in comments and strings
+    - revive # Configurable linting rules
+    - godot # Godoc comments must end with a period
+
+    # Safety
+    - noctx # HTTP requests made without a context
+
+    # Line length
+    - lll
+
+  settings:
+    lll:
+      line-length: 160
+
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - "checkPrivateReceivers"
+            - "disable-stuttering-check"
+
+    godot:
+      scope: declarations
+
+    errcheck:
+      # http.ResponseWriter.Write errors are unactionable in HTTP handlers.
+      exclude-functions:
+        - (net/http.ResponseWriter).Write
+
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - lll
+          - errcheck
