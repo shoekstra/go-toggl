@@ -68,6 +68,23 @@ func (s *TagsService) ListTags(ctx context.Context, workspaceID int, opts *ListT
 	return tags, resp, nil
 }
 
+// GetTag gets a single tag by ID.
+//
+// API: GET /api/v9/workspaces/{workspace_id}/tags/{tag_id}
+//
+// See: https://engineering.toggl.com/docs/api/tags#get-get-single-tag
+func (s *TagsService) GetTag(ctx context.Context, workspaceID, tagID int) (*Tag, *Response, error) {
+	path := fmt.Sprintf("/api/v9/workspaces/%d/tags/%d", workspaceID, tagID)
+
+	tag := new(Tag)
+	resp, err := s.client.get(ctx, path, tag)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return tag, resp, nil
+}
+
 // CreateTag creates a new tag in the given workspace.
 //
 // API: POST /api/v9/workspaces/{workspace_id}/tags
