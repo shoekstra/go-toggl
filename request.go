@@ -109,7 +109,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, v interface{}) (*Res
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

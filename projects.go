@@ -163,7 +163,7 @@ func (s *ProjectsService) CreateProject(ctx context.Context, workspaceID int, op
 		return nil, nil, fmt.Errorf("options required")
 	}
 	if opts.Name == "" {
-		return nil, nil, fmt.Errorf("Name is required")
+		return nil, nil, fmt.Errorf("name is required")
 	}
 
 	path := fmt.Sprintf("/api/v9/workspaces/%d/projects", workspaceID)

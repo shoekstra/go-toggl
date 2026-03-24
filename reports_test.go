@@ -239,9 +239,9 @@ func TestReportsService_SummaryReport_BodyFilters(t *testing.T) {
 	client := testClient(t, handler)
 	opts := &SummaryReportOptions{
 		ReportFilters: ReportFilters{
-			StartDate:  String("2024-01-01"),
-			EndDate:    String("2024-01-31"),
-			Billable:   Bool(true),
+			StartDate: String("2024-01-01"),
+			EndDate:   String("2024-01-31"),
+			Billable:  Bool(true),
 		},
 		Grouping:    String("projects"),
 		SubGrouping: String("users"),
