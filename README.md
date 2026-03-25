@@ -120,6 +120,9 @@ for {
 # Run all tests
 task test
 
+# Run integration tests against the real Toggl API
+TOGGL_API_TOKEN=<token> TOGGL_WORKSPACE_ID=<id> task test:integration
+
 # Format code
 task fmt
 
@@ -135,6 +138,10 @@ task test:coverage
 # Clean build artifacts
 task clean
 ```
+
+Integration tests are gated with `//go:build integration` and run sequentially
+(`-p 1`) to stay within Toggl's API rate limits. They require a valid API token
+and workspace ID and will create and delete real data.
 
 ## License
 

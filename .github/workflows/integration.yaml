@@ -1,0 +1,33 @@
+name: Integration Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    # Secrets are not available on fork PRs; skip rather than fail.
+    # For push/workflow_dispatch, github.repository is sufficient.
+    # For pull_request, check the head repo to exclude forks.
+    if: github.repository == 'shoekstra/go-toggl' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'shoekstra/go-toggl')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
+        with:
+          go-version-file: "go.mod"
+
+      - name: Run integration tests
+        env:
+          TOGGL_API_TOKEN: ${{ secrets.TOGGL_API_TOKEN }}
+          TOGGL_WORKSPACE_ID: ${{ secrets.TOGGL_WORKSPACE_ID }}
+        run: go test -v -tags integration -timeout 10m -p 1 ./...
