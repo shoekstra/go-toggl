@@ -133,7 +133,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, v interface{}) (*Res
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return response, &ErrorResponse{
 			StatusCode: resp.StatusCode,
-			Message:    string(respBody),
+			Message:    parseErrorMessage(respBody),
 			Response:   resp,
 		}
 	}
