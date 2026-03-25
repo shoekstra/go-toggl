@@ -133,8 +133,9 @@ func (s *TimeEntriesService) GetTimeEntry(ctx context.Context, entryID int) (*Ti
 	return entry, resp, nil
 }
 
-// GetRunningTimeEntry returns the currently running time entry, if any.
-// Returns a 404 error when no entry is running.
+// GetRunningTimeEntry returns the currently running time entry, or nil if no
+// entry is running. The Toggl API returns a null body (HTTP 200) when nothing
+// is running rather than a 404, so a nil return value is not an error.
 //
 // API: GET /api/v9/me/time_entries/current
 //
@@ -146,6 +147,11 @@ func (s *TimeEntriesService) GetRunningTimeEntry(ctx context.Context) (*TimeEntr
 	resp, err := s.client.get(ctx, path, entry)
 	if err != nil {
 		return nil, resp, err
+	}
+
+	// API returns null/200 when no entry is running.
+	if string(resp.Body) == "null" {
+		return nil, resp, nil
 	}
 
 	return entry, resp, nil
