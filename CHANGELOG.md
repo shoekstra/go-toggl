@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.2.0](https://github.com/shoekstra/go-toggl/compare/v0.1.0...v0.2.0) (2026-03-25)
+
+
+### 🤖 CI
+
+* Add self-hosted Renovate for dependency and Actions updates ([#15](https://github.com/shoekstra/go-toggl/issues/15)) ([9c52c57](https://github.com/shoekstra/go-toggl/commit/9c52c57986c212c3e5b7237ceb391471f845ebcd))
+* Fix Renovate Action version [skip-ci] ([#17](https://github.com/shoekstra/go-toggl/issues/17)) ([3effb43](https://github.com/shoekstra/go-toggl/commit/3effb43f77b6096db8864e3fc933f7369b72204f))
+* switch Renovate to Mend GitHub App ([#22](https://github.com/shoekstra/go-toggl/issues/22)) ([852fc2a](https://github.com/shoekstra/go-toggl/commit/852fc2abec215292ace165a6cd2f73fb8677a7a2))
+* Tell Renovate to autodiscover this repository [skip ci] ([#18](https://github.com/shoekstra/go-toggl/issues/18)) ([15c5029](https://github.com/shoekstra/go-toggl/commit/15c50290b5812b929710138801869dd43dcfc23f))
+
+
+### 🚀 Features
+
+* add MeService with GetMe ([#28](https://github.com/shoekstra/go-toggl/issues/28)) ([032683c](https://github.com/shoekstra/go-toggl/commit/032683c09f022c65d05f1e3dbc28191a3891af62))
+* add TagsService.GetTag ([#27](https://github.com/shoekstra/go-toggl/issues/27)) ([2867218](https://github.com/shoekstra/go-toggl/commit/28672188ff1415559abf956fe1854065844f351b))
+
+
+### 🐛 Fixes
+
+* improve ErrorResponse.Error() message quality ([#29](https://github.com/shoekstra/go-toggl/issues/29)) ([757848f](https://github.com/shoekstra/go-toggl/commit/757848f759f72c6b118de1808e32686b600f97ae))
+* remove GetTag and correct GetRunningTimeEntry null response ([#34](https://github.com/shoekstra/go-toggl/issues/34)) ([4b9c73e](https://github.com/shoekstra/go-toggl/commit/4b9c73e4c7f3f5e10db382b3f2a21c155b36bc41))
+
+
+### 🧼 Refactoring
+
+* rename TogglClient to WorkspaceClient ([#26](https://github.com/shoekstra/go-toggl/issues/26)) ([5fa29e8](https://github.com/shoekstra/go-toggl/commit/5fa29e813b83c2c699689e4c6904ffc2d51228ec))
+
 ## 0.1.0 (2026-03-23)
 
 
