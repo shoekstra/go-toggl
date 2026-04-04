@@ -3,6 +3,11 @@
   "extends": ["config:recommended"],
   "pinDigests": true,
   "labels": ["dependencies"],
+  "dependencyDashboard": true,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "security"]
+  },
   "packageRules": [
     {
       "description": "Group all GitHub Actions updates into a single PR",
