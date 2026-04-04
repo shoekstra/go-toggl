@@ -18,7 +18,7 @@
     {
       "description": "Group Go toolchain updates separately from module updates",
       "matchManagers": ["gomod"],
-      "matchDepTypes": ["golang"],
+      "matchDepTypes": ["golang", "toolchain"],
       "groupName": "Go toolchain"
     }
   ]
