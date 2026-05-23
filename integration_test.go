@@ -10,14 +10,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	toggl "github.com/shoekstra/go-toggl"
 )
-
-var integrationThrottleMu sync.Mutex
 
 // integrationClient returns a real API client, skipping the test if
 // TOGGL_API_TOKEN is not set.
@@ -59,9 +56,7 @@ func uniqueName(suffix string) string {
 // briefly to stay within Toggl's API rate limits when tests run sequentially.
 func integrationCtx(t *testing.T) context.Context {
 	t.Helper()
-	integrationThrottleMu.Lock()
-	t.Cleanup(integrationThrottleMu.Unlock)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	t.Cleanup(cancel)
 	return ctx
@@ -95,6 +90,8 @@ func integrationIsHourlyQuotaError(err error) bool {
 	if !errors.As(err, &apiErr) {
 		return false
 	}
+	// Toggl reports hourly quota exhaustion as HTTP 402 rather than the more
+	// typical 429, so accept either status for this external-limit condition.
 	if apiErr.StatusCode != http.StatusPaymentRequired && apiErr.StatusCode != http.StatusTooManyRequests {
 		return false
 	}
