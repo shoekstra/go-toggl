@@ -20,9 +20,7 @@ func TestIntegration_Reports_SummaryReport(t *testing.T) {
 		ReportFilters: filters,
 		Grouping:      toggl.String("projects"),
 	})
-	if err != nil {
-		t.Fatalf("SummaryReport: %v", err)
-	}
+	integrationRequireNoError(t, "SummaryReport", err)
 	if data == nil {
 		t.Fatal("SummaryReport returned nil data")
 	}
@@ -40,9 +38,7 @@ func TestIntegration_Reports_DetailedReport(t *testing.T) {
 	entries, resp, err := client.Reports.DetailedReport(ctx, wsID, &toggl.DetailedReportOptions{
 		ReportFilters: filters,
 	})
-	if err != nil {
-		t.Fatalf("DetailedReport: %v", err)
-	}
+	integrationRequireNoError(t, "DetailedReport", err)
 	t.Logf("detailed entries: %d, next_id: %d", len(entries), resp.Pagination.NextID)
 }
 
@@ -54,9 +50,7 @@ func TestIntegration_Reports_DetailedReportTotals(t *testing.T) {
 	totals, _, err := client.Reports.DetailedReportTotals(ctx, wsID, &toggl.DetailedReportOptions{
 		ReportFilters: recentFilters(),
 	})
-	if err != nil {
-		t.Fatalf("DetailedReportTotals: %v", err)
-	}
+	integrationRequireNoError(t, "DetailedReportTotals", err)
 	if totals == nil {
 		t.Fatal("DetailedReportTotals returned nil data")
 	}
@@ -71,9 +65,7 @@ func TestIntegration_Reports_WeeklyReport(t *testing.T) {
 	entries, _, err := client.Reports.WeeklyReport(ctx, wsID, &toggl.WeeklyReportOptions{
 		ReportFilters: recentFilters(),
 	})
-	if err != nil {
-		t.Fatalf("WeeklyReport: %v", err)
-	}
+	integrationRequireNoError(t, "WeeklyReport", err)
 	t.Logf("weekly entries: %d", len(entries))
 }
 
@@ -85,9 +77,7 @@ func TestIntegration_Reports_ExportDetailedCSV(t *testing.T) {
 	data, _, err := client.Reports.ExportDetailedCSV(ctx, wsID, &toggl.DetailedExportOptions{
 		DetailedReportOptions: toggl.DetailedReportOptions{ReportFilters: recentFilters()},
 	})
-	if err != nil {
-		t.Fatalf("ExportDetailedCSV: %v", err)
-	}
+	integrationRequireNoError(t, "ExportDetailedCSV", err)
 	if len(data) == 0 {
 		t.Error("ExportDetailedCSV returned empty bytes")
 	}

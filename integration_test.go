@@ -4,14 +4,20 @@ package toggl_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	toggl "github.com/shoekstra/go-toggl"
 )
+
+var integrationThrottleMu sync.Mutex
 
 // integrationClient returns a real API client, skipping the test if
 // TOGGL_API_TOKEN is not set.
@@ -53,8 +59,45 @@ func uniqueName(suffix string) string {
 // briefly to stay within Toggl's API rate limits when tests run sequentially.
 func integrationCtx(t *testing.T) context.Context {
 	t.Helper()
-	time.Sleep(2 * time.Second)
+	integrationThrottleMu.Lock()
+	t.Cleanup(integrationThrottleMu.Unlock)
+	time.Sleep(3 * time.Second)
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	t.Cleanup(cancel)
 	return ctx
+}
+
+func integrationRequireNoError(t *testing.T, op string, err error) {
+	t.Helper()
+	if err == nil {
+		return
+	}
+	if integrationIsHourlyQuotaError(err) {
+		t.Skipf("%s: skipping due to Toggl API hourly quota: %v", op, err)
+	}
+	t.Fatalf("%s: %v", op, err)
+}
+
+func integrationCleanupError(t *testing.T, op string, err error) {
+	t.Helper()
+	if err == nil {
+		return
+	}
+	if integrationIsHourlyQuotaError(err) {
+		t.Logf("%s: cleanup deferred due to Toggl API hourly quota: %v", op, err)
+		return
+	}
+	t.Errorf("%s: %v", op, err)
+}
+
+func integrationIsHourlyQuotaError(err error) bool {
+	var apiErr *toggl.ErrorResponse
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	if apiErr.StatusCode != http.StatusPaymentRequired && apiErr.StatusCode != http.StatusTooManyRequests {
+		return false
+	}
+	msg := strings.ToLower(apiErr.Message)
+	return strings.Contains(msg, "hourly limit") || strings.Contains(msg, "quota will reset")
 }

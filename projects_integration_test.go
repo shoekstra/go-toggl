@@ -20,9 +20,7 @@ func TestIntegration_Projects_CRUD(t *testing.T) {
 		Color:  toggl.String("#06aaf5"),
 		Active: toggl.Bool(true),
 	})
-	if err != nil {
-		t.Fatalf("CreateProject: %v", err)
-	}
+	integrationRequireNoError(t, "CreateProject", err)
 	if created.ID == 0 {
 		t.Fatal("created project has ID=0")
 	}
@@ -32,9 +30,7 @@ func TestIntegration_Projects_CRUD(t *testing.T) {
 
 	// Get.
 	got, _, err := client.Projects.GetProject(ctx, wsID, created.ID)
-	if err != nil {
-		t.Fatalf("GetProject: %v", err)
-	}
+	integrationRequireNoError(t, "GetProject", err)
 	if got.Name != name {
 		t.Errorf("Name = %q, want %q", got.Name, name)
 	}
@@ -47,18 +43,14 @@ func TestIntegration_Projects_CRUD(t *testing.T) {
 	updated, _, err := client.Projects.UpdateProject(ctx, wsID, created.ID, &toggl.UpdateProjectOptions{
 		Name: toggl.String(newName),
 	})
-	if err != nil {
-		t.Fatalf("UpdateProject: %v", err)
-	}
+	integrationRequireNoError(t, "UpdateProject", err)
 	if updated.Name != newName {
 		t.Errorf("updated Name = %q, want %q", updated.Name, newName)
 	}
 
 	// List — project should appear.
 	projects, _, err := client.Projects.ListProjects(ctx, wsID, nil)
-	if err != nil {
-		t.Fatalf("ListProjects: %v", err)
-	}
+	integrationRequireNoError(t, "ListProjects", err)
 	found := false
 	for _, p := range projects {
 		if p.ID == created.ID {
@@ -72,6 +64,6 @@ func TestIntegration_Projects_CRUD(t *testing.T) {
 
 	// Delete.
 	if _, err := client.Projects.DeleteProject(ctx, wsID, created.ID, nil); err != nil {
-		t.Fatalf("DeleteProject: %v", err)
+		integrationRequireNoError(t, "DeleteProject", err)
 	}
 }

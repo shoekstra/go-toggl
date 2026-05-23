@@ -11,9 +11,7 @@ func TestIntegration_Me_GetMe(t *testing.T) {
 	ctx := integrationCtx(t)
 
 	me, _, err := client.Me.GetMe(ctx)
-	if err != nil {
-		t.Fatalf("GetMe: %v", err)
-	}
+	integrationRequireNoError(t, "GetMe", err)
 	if me == nil {
 		t.Fatal("GetMe returned nil")
 	}

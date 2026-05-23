@@ -20,17 +20,13 @@ func TestIntegration_Tags_ListFindsCreatedTag(t *testing.T) {
 	created, _, err := client.Tags.CreateTag(ctx, wsID, &toggl.CreateTagOptions{
 		Name: uniqueName("tag-probe"),
 	})
-	if err != nil {
-		t.Fatalf("CreateTag: %v", err)
-	}
+	integrationRequireNoError(t, "CreateTag", err)
 	t.Cleanup(func() {
 		client.Tags.DeleteTag(ctx, wsID, created.ID) //nolint:errcheck
 	})
 
 	tags, _, err := client.Tags.ListTags(ctx, wsID, nil)
-	if err != nil {
-		t.Fatalf("ListTags: %v", err)
-	}
+	integrationRequireNoError(t, "ListTags", err)
 	found := false
 	for _, tag := range tags {
 		if tag.ID == created.ID {
@@ -51,9 +47,7 @@ func TestIntegration_Tags_CRUD(t *testing.T) {
 	// Create.
 	name := uniqueName("tag")
 	created, _, err := client.Tags.CreateTag(ctx, wsID, &toggl.CreateTagOptions{Name: name})
-	if err != nil {
-		t.Fatalf("CreateTag: %v", err)
-	}
+	integrationRequireNoError(t, "CreateTag", err)
 	if created.ID == 0 {
 		t.Fatal("created tag has ID=0")
 	}
@@ -68,15 +62,13 @@ func TestIntegration_Tags_CRUD(t *testing.T) {
 	// Update.
 	newName := uniqueName("tag-renamed")
 	updated, _, err := client.Tags.UpdateTag(ctx, wsID, created.ID, &toggl.UpdateTagOptions{Name: newName})
-	if err != nil {
-		t.Fatalf("UpdateTag: %v", err)
-	}
+	integrationRequireNoError(t, "UpdateTag", err)
 	if updated.Name != newName {
 		t.Errorf("updated Name = %q, want %q", updated.Name, newName)
 	}
 
 	// Delete.
 	if _, err := client.Tags.DeleteTag(ctx, wsID, created.ID); err != nil {
-		t.Fatalf("DeleteTag: %v", err)
+		integrationRequireNoError(t, "DeleteTag", err)
 	}
 }

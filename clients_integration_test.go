@@ -19,9 +19,7 @@ func TestIntegration_Clients_CRUD(t *testing.T) {
 		Name:  name,
 		Notes: toggl.String("integration test client"),
 	})
-	if err != nil {
-		t.Fatalf("CreateClient: %v", err)
-	}
+	integrationRequireNoError(t, "CreateClient", err)
 	if created.ID == 0 {
 		t.Fatal("created client has ID=0")
 	}
@@ -31,9 +29,7 @@ func TestIntegration_Clients_CRUD(t *testing.T) {
 
 	// Get.
 	got, _, err := client.Clients.GetClient(ctx, wsID, created.ID)
-	if err != nil {
-		t.Fatalf("GetClient: %v", err)
-	}
+	integrationRequireNoError(t, "GetClient", err)
 	if got.Name != name {
 		t.Errorf("Name = %q, want %q", got.Name, name)
 	}
@@ -43,18 +39,14 @@ func TestIntegration_Clients_CRUD(t *testing.T) {
 	updated, _, err := client.Clients.UpdateClient(ctx, wsID, created.ID, &toggl.UpdateClientOptions{
 		Name: toggl.String(newName),
 	})
-	if err != nil {
-		t.Fatalf("UpdateClient: %v", err)
-	}
+	integrationRequireNoError(t, "UpdateClient", err)
 	if updated.Name != newName {
 		t.Errorf("updated Name = %q, want %q", updated.Name, newName)
 	}
 
 	// List — client should appear.
 	clients, _, err := client.Clients.ListClients(ctx, wsID, nil)
-	if err != nil {
-		t.Fatalf("ListClients: %v", err)
-	}
+	integrationRequireNoError(t, "ListClients", err)
 	found := false
 	for _, c := range clients {
 		if c.ID == created.ID {
@@ -68,6 +60,6 @@ func TestIntegration_Clients_CRUD(t *testing.T) {
 
 	// Delete.
 	if _, err := client.Clients.DeleteClient(ctx, wsID, created.ID); err != nil {
-		t.Fatalf("DeleteClient: %v", err)
+		integrationRequireNoError(t, "DeleteClient", err)
 	}
 }

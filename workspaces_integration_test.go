@@ -13,9 +13,7 @@ func TestIntegration_Workspaces_ListWorkspaces(t *testing.T) {
 	ctx := integrationCtx(t)
 
 	workspaces, _, err := client.Workspaces.ListWorkspaces(ctx)
-	if err != nil {
-		t.Fatalf("ListWorkspaces: %v", err)
-	}
+	integrationRequireNoError(t, "ListWorkspaces", err)
 	if len(workspaces) == 0 {
 		t.Fatal("expected at least one workspace")
 	}
@@ -35,9 +33,7 @@ func TestIntegration_Workspaces_GetWorkspace(t *testing.T) {
 	ctx := integrationCtx(t)
 
 	ws, _, err := client.Workspaces.GetWorkspace(ctx, wsID)
-	if err != nil {
-		t.Fatalf("GetWorkspace: %v", err)
-	}
+	integrationRequireNoError(t, "GetWorkspace", err)
 	if ws.ID != wsID {
 		t.Errorf("ID = %d, want %d", ws.ID, wsID)
 	}
@@ -53,16 +49,14 @@ func TestIntegration_Workspaces_UpdateWorkspace(t *testing.T) {
 
 	// Read the current name so we can restore it.
 	ws, _, err := client.Workspaces.GetWorkspace(ctx, wsID)
-	if err != nil {
-		t.Fatalf("GetWorkspace: %v", err)
-	}
+	integrationRequireNoError(t, "GetWorkspace", err)
 	originalName := ws.Name
 
 	t.Cleanup(func() {
 		if _, _, err := client.Workspaces.UpdateWorkspace(ctx, wsID, &toggl.UpdateWorkspaceOptions{
 			Name: toggl.String(originalName),
 		}); err != nil {
-			t.Errorf("cleanup: failed to restore workspace name: %v", err)
+			integrationCleanupError(t, "cleanup: failed to restore workspace name", err)
 		}
 	})
 
@@ -70,9 +64,7 @@ func TestIntegration_Workspaces_UpdateWorkspace(t *testing.T) {
 	updated, _, err := client.Workspaces.UpdateWorkspace(ctx, wsID, &toggl.UpdateWorkspaceOptions{
 		Name: toggl.String(expectedName),
 	})
-	if err != nil {
-		t.Fatalf("UpdateWorkspace: %v", err)
-	}
+	integrationRequireNoError(t, "UpdateWorkspace", err)
 	if updated.Name != expectedName {
 		t.Errorf("Name = %q, want %q", updated.Name, expectedName)
 	}
