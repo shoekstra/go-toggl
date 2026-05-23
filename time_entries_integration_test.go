@@ -16,9 +16,7 @@ func TestIntegration_TimeEntries_GetRunningTimeEntry_NilWhenNoneRunning(t *testi
 	// The API returns null/200 when nothing is running; the client must
 	// return (nil, resp, nil) rather than a zero-value TimeEntry.
 	entry, _, err := client.TimeEntries.GetRunningTimeEntry(ctx)
-	if err != nil {
-		t.Fatalf("GetRunningTimeEntry: %v", err)
-	}
+	integrationRequireNoError(t, "GetRunningTimeEntry", err)
 	// If something happens to be running, skip rather than fail — this test
 	// is specifically about the no-entry-running case.
 	if entry != nil && entry.ID != 0 {
@@ -39,9 +37,7 @@ func TestIntegration_TimeEntries_CRUD(t *testing.T) {
 		Start:       time.Now().UTC(),
 		Description: toggl.String(uniqueName("entry")),
 	})
-	if err != nil {
-		t.Fatalf("StartTimeEntry: %v", err)
-	}
+	integrationRequireNoError(t, "StartTimeEntry", err)
 	if started.ID == 0 {
 		t.Fatal("started entry has ID=0")
 	}
@@ -54,9 +50,7 @@ func TestIntegration_TimeEntries_CRUD(t *testing.T) {
 
 	// GetRunningTimeEntry should now return the entry we just started.
 	running, _, err := client.TimeEntries.GetRunningTimeEntry(ctx)
-	if err != nil {
-		t.Fatalf("GetRunningTimeEntry: %v", err)
-	}
+	integrationRequireNoError(t, "GetRunningTimeEntry", err)
 	if running == nil {
 		t.Fatal("GetRunningTimeEntry() = nil, want running entry")
 	}
@@ -66,18 +60,14 @@ func TestIntegration_TimeEntries_CRUD(t *testing.T) {
 
 	// Get by ID.
 	got, _, err := client.TimeEntries.GetTimeEntry(ctx, started.ID)
-	if err != nil {
-		t.Fatalf("GetTimeEntry: %v", err)
-	}
+	integrationRequireNoError(t, "GetTimeEntry", err)
 	if got.ID != started.ID {
 		t.Errorf("GetTimeEntry ID = %d, want %d", got.ID, started.ID)
 	}
 
 	// Stop.
 	stopped, _, err := client.TimeEntries.StopTimeEntry(ctx, wsID, started.ID)
-	if err != nil {
-		t.Fatalf("StopTimeEntry: %v", err)
-	}
+	integrationRequireNoError(t, "StopTimeEntry", err)
 	if stopped.Duration < 0 {
 		t.Errorf("stopped Duration = %d, want >= 0", stopped.Duration)
 	}
@@ -87,16 +77,14 @@ func TestIntegration_TimeEntries_CRUD(t *testing.T) {
 	updated, _, err := client.TimeEntries.UpdateTimeEntry(ctx, wsID, stopped.ID, &toggl.UpdateTimeEntryOptions{
 		Description: toggl.String(newDesc),
 	})
-	if err != nil {
-		t.Fatalf("UpdateTimeEntry: %v", err)
-	}
+	integrationRequireNoError(t, "UpdateTimeEntry", err)
 	if updated.Description == nil || *updated.Description != newDesc {
 		t.Errorf("updated Description = %v, want %q", updated.Description, newDesc)
 	}
 
 	// Delete.
 	if _, err := client.TimeEntries.DeleteTimeEntry(ctx, wsID, stopped.ID); err != nil {
-		t.Fatalf("DeleteTimeEntry: %v", err)
+		integrationRequireNoError(t, "DeleteTimeEntry", err)
 	}
 }
 
@@ -110,9 +98,7 @@ func TestIntegration_TimeEntries_ListTimeEntries(t *testing.T) {
 		StartDate: toggl.String(now.AddDate(0, -1, 0).Format("2006-01-02")),
 		EndDate:   toggl.String(now.Format("2006-01-02")),
 	})
-	if err != nil {
-		t.Fatalf("ListTimeEntries: %v", err)
-	}
+	integrationRequireNoError(t, "ListTimeEntries", err)
 	// An empty list is valid; just verify no error and correct types.
 	for _, e := range entries {
 		if e.ID == 0 {
